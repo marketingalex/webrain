@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WeBrain · Demandas, Projetos e Solicitações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/codex-workspace.css">
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#fff;font-family:Montserrat,system-ui,sans-serif;color:#293947}.wp-header{display:flex;align-items:center;gap:26px;padding:14px 32px;background:#374b58;color:white;min-height:72px}.wp-logo{font-size:23px;letter-spacing:-1px;font-weight:600}.wp-logo span{font-weight:400;color:#d5e0e7}.wp-header nav{display:flex;gap:6px;flex:1}.wp-header button,.wp-header a{font:inherit;font-size:12px;color:white;border:1px solid transparent;background:transparent;border-radius:5px;padding:10px 12px;text-decoration:none;cursor:pointer}.wp-header button[aria-current=page]{background:#ffffff18;border-color:#9bafbb}.wp-header .wp-theme{border-color:#9bafbb}.wp-skip{position:fixed;top:-80px;background:white;padding:14px;z-index:99}.wp-skip:focus{top:5px}button:focus-visible,a:focus-visible{outline:3px solid #ffaf80;outline-offset:3px}.wp-footer{font-size:11px;padding:16px 32px;color:#667482;border-top:1px solid #dce2e9}.wp-footer a{color:inherit}.wp-dialog{border:0;border-radius:12px;max-width:480px;width:calc(100% - 32px);padding:26px;color:#293947}.wp-dialog::backdrop{background:#172d4266}.wp-dialog p{font-size:14px;line-height:1.8}.wp-dialog button{padding:10px 18px;background:#374b58;border:0;border-radius:5px;color:white;font:inherit}.wp-test{display:block;padding:10px 32px;font-size:11px;background:#f5f7fa}.wp-test input{vertical-align:middle}html[data-theme=dark] body{background:#1e2a34}html[data-theme=dark] .wp-test{background:#293946;color:#eef3f7}html[data-theme=dark] .wp-footer{color:#b6c2cc}
+    @media(max-width:700px){.wp-header{padding:14px;gap:12px;flex-wrap:wrap}.wp-header nav{order:3;flex-basis:100%;overflow:auto}.wp-header .wp-theme{margin-left:auto}.wp-header button,.wp-header a{padding:9px}.wp-test{padding:10px 14px}.wp-footer{padding:16px}}
+  </style>
+</head>
+<body>
+  <a href="#workspace" class="wp-skip">Pular para o quadro</a>
+  <header class="wp-header"><div class="wp-logo">We<span>Brain</span></div><nav aria-label="Telas da prévia"><a href="inicio-preview.html">Início</a><button data-page="demandas" aria-current="page">Demandas</button><button data-page="projetos">Projetos</button><button data-page="solicitacoes">Solicitações</button></nav><button class="wp-theme" id="theme" aria-pressed="false">Tema escuro</button></header>
+  <label class="wp-test"><input type="checkbox" id="fail-next"> Simular falha na próxima gravação, para testar recuperação</label>
+  <main id="workspace" tabindex="-1"></main>
+  <footer class="wp-footer">Prévia funcional · alterações em memória, reiniciadas ao recarregar. <a href="../ALINHAMENTO_CODEX.md">Contrato de integração</a></footer>
+  <dialog id="request-info" class="wp-dialog" aria-labelledby="request-title"><h2 id="request-title"></h2><p>Os formulários de eventos, compras e coffee já estão sendo desenvolvidos na aplicação. Este botão está pronto para abri-los pela integração. Nenhum pedido foi enviado nesta prévia.</p><form method="dialog"><button autofocus>Entendi</button></form></dialog>
+  <script src="assets/js/data.js"></script><script src="assets/js/codex-workspace.js"></script>
+  <script>
+    const demo = structuredClone(WB.data);
+    let serial = 0;
+    const fail = () => { const checkbox=document.getElementById('fail-next'); if(checkbox.checked){checkbox.checked=false;throw new Error('Falha simulada. Seus dados anteriores foram preservados. Tente novamente.');} };
+    function highlight(page){document.querySelectorAll('[data-page]').forEach(button=>{if(button.dataset.page===page)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});}
+    let mounted;
+    function openPage(page){if(mounted)mounted.destroy();highlight(page);mounted=WB.workspace.mount(document.getElementById('workspace'),{
+      data:demo,page,demo:true,
+      async onUpdate({ids,changes}) {fail();demo.demandas=demo.demandas.map(d=>ids.includes(d.id)?{...d,...changes}:d);},
+      async onCreate(item) {fail();const created={...item,id:'demo-'+Date.now()+'-'+(++serial)};demo.demandas.push(created);return created;},
+      onPageChange:highlight,
+      onRequest(type){document.getElementById('request-title').textContent=({evento:'Solicitar evento',compra:'Compra ou pagamento',coffe:'Solicitar coffee'})[type];document.getElementById('request-info').showModal();}
+    });}
+    document.querySelectorAll('[data-page]').forEach(button=>button.addEventListener('click',()=>openPage(button.dataset.page)));
+    document.getElementById('theme').addEventListener('click',function(){const dark=document.documentElement.dataset.theme!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';this.textContent=dark?'Tema claro':'Tema escuro';this.setAttribute('aria-pressed',String(dark));});
+    openPage('demandas');
+  </script>
+</body></html>

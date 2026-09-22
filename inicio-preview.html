@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WeBrain · Início — proposta de interface</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/codex-home.css">
+  <style>
+    *{box-sizing:border-box} body{margin:0;background:#f4f6f7;color:#374b58;font-family:Montserrat,system-ui,sans-serif}
+    .preview-bar{background:#374b58;color:white;min-height:72px;padding:16px 40px;display:flex;align-items:center;gap:18px}
+    .preview-name{font-size:24px;font-weight:600;letter-spacing:-1px}.preview-name span{font-weight:400;color:#d4dee4}
+    .preview-label{font-size:11px;border-left:1px solid #91a2ad;padding-left:18px}.preview-bar button{margin-left:auto;border:1px solid #acbac4;border-radius:6px;background:transparent;color:white;padding:10px 14px;font:inherit;font-size:12px;cursor:pointer}
+    .skip{position:fixed;top:-80px;left:12px;background:white;color:#374b58;padding:12px;z-index:10}.skip:focus{top:10px}
+    dialog{border:1px solid #cad3d9;border-radius:14px;padding:28px;width:min(560px,calc(100% - 32px));max-height:85vh;overflow:auto;color:#263b49;box-shadow:0 24px 80px #17273333}
+    dialog::backdrop{background:#15263088}dialog h2{font-size:22px;margin:12px 0}dialog p{font-size:14px;line-height:1.7;white-space:pre-line}dialog small{font-size:11px;color:#626e76}dialog button{display:block;margin:24px 0 0 auto;padding:12px 20px;border:0;border-radius:6px;background:#374b58;color:white;font:inherit;cursor:pointer}
+    :focus-visible{outline:3px solid #ff5f00;outline-offset:4px}footer{padding:20px;text-align:center;font-size:11px;color:#626e76}html[data-theme=dark] body{background:#18232b}html[data-theme=dark] footer{color:#b4c0c8}
+    @media(max-width:480px){.preview-bar{padding:16px;gap:12px}.preview-label{display:none}.preview-name{font-size:22px}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#inicio">Pular para o conteúdo</a>
+  <header class="preview-bar"><div class="preview-name">We<span>Brain</span></div><span class="preview-label">Proposta de interface · Início</span><button id="theme" type="button" aria-pressed="false">Tema escuro</button></header>
+  <main id="inicio" tabindex="-1"></main>
+  <footer>Prévia de design · ações de criação aguardam integração com a aplicação.</footer>
+  <dialog id="detail" aria-labelledby="detail-title"><small>PRÉVIA · DADOS DE DEMONSTRAÇÃO</small><h2 id="detail-title"></h2><p id="detail-body"></p><form method="dialog"><button autofocus>Fechar</button></form></dialog>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/codex-home.js"></script>
+  <script>
+    const dialog = document.getElementById('detail');
+    const labels = { 'nova-demanda':'Nova demanda', evento:'Solicitar evento', compra:'Compra ou pagamento', coffe:'Solicitar coffee' };
+    WB.home.mount(document.getElementById('inicio'), { data:WB.data, demo:true, onAction(action, item) {
+      document.getElementById('detail-title').textContent = item ? (item.nome || item.titulo) : labels[action];
+      document.getElementById('detail-body').textContent = item ? (item.descricao || item.corpo || 'Sem descrição disponível.') : 'Este é o ponto de entrada para o formulário do sistema. O componente está pronto para receber a ação da aplicação. Nenhuma solicitação foi registrada nesta prévia.';
+      dialog.showModal();
+    }});
+    document.getElementById('theme').addEventListener('click', function () {
+      const dark = document.documentElement.dataset.theme !== 'dark';
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      this.textContent = dark ? 'Tema claro' : 'Tema escuro';
+      this.setAttribute('aria-pressed', String(dark));
+    });
+  </script>
+</body>
+</html>

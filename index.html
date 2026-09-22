@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeBrain — Cérebro We</title>
+<meta name="description" content="Portal interno do Grupo We: demandas, projetos, solicitações, governança e indicadores.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23374B58'/><path d='M6 11l3 10 3.4-7.4L15.8 21l3-10' stroke='%23fff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/><circle cx='25' cy='11' r='2.6' fill='%23FF5F00'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/codex-home.css">
+<link rel="stylesheet" href="assets/css/codex-workspace.css">
+<link rel="stylesheet" href="assets/css/codex-projects.css">
+<link rel="stylesheet" href="assets/css/fase2.css">
+<link rel="stylesheet" href="assets/css/adm.css">
+<link rel="stylesheet" href="assets/css/comercial.css">
+<link rel="stylesheet" href="assets/css/pedidos.css">
+</head>
+<body>
+
+<div class="shell">
+  <aside class="sb" id="sidebar" aria-label="Navegação principal"></aside>
+
+  <div class="main">
+    <header class="tb" id="topbar"></header>
+    <main class="page" id="conteudo" tabindex="-1"></main>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div class="toasts" id="toast-root" aria-live="polite"></div>
+
+<noscript>
+  <p style="padding:24px">O WeBrain precisa de JavaScript para funcionar.</p>
+</noscript>
+
+<!-- Base da aplicação -->
+<script src="assets/js/data.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/charts.js"></script>
+<!-- Pedidos (evento, compra, coffee): situações, filas de aprovação,
+     notificações e gravação. Antes dos formulários, que usam as regras. -->
+<script src="assets/js/pedidos.js"></script>
+<script src="assets/js/forms.js"></script>
+<script src="assets/js/views.js"></script>
+<!-- Histórico de solicitações e Solicitações a aprovar. Depois de views.js,
+     porque substitui WB.views.solicitacoes. -->
+<script src="assets/js/pedidos-views.js"></script>
+<!-- Fase 2 — operações WeInvest e Nós Gastronomia: dados, formulários e telas.
+     Carregam antes do roteador, que lê deles as rotas, os ramos da lateral e o
+     mapa de ações. -->
+<script src="assets/js/fase2-data.js"></script>
+<script src="assets/js/fase2-forms.js"></script>
+<script src="assets/js/fase2-views.js"></script>
+<!-- Administrativo: contratos, colaboradores, fornecedores, patrocinadores,
+     bens e CNPJs em formato de planilha. Carregam depois de views.js, porque
+     substituem WB.views.adm. -->
+<script src="assets/js/adm-data.js"></script>
+<script src="assets/js/adm-forms.js"></script>
+<script src="assets/js/adm-views.js"></script>
+<!-- Comercial: lead, funil do CRM e clientes. Depois de views.js e forms.js,
+     porque substitui WB.views.crm, WB.views.clientes, WB.abrirLead e
+     WB.abrirCliente; e depois de adm-data.js, porque a conversão lê os
+     contratos do Administrativo. -->
+<script src="assets/js/comercial-data.js"></script>
+<script src="assets/js/comercial-forms.js"></script>
+<script src="assets/js/comercial-views.js"></script>
+<!-- Divisão do portal por operação: quem é de uma operação vê a dela. Depende
+     dos arquivos da Fase 2 já carregados, porque lê as árvores deles. -->
+<script src="assets/js/operacoes.js"></script>
+<!-- Tela inicial e componentes visuais (Codex) — carregados antes do roteador -->
+<script src="assets/js/codex-home.js"></script>
+<script src="assets/js/codex-workspace.js"></script>
+<script src="assets/js/codex-projects.js"></script>
+<script src="assets/js/codex-projects-views.js"></script>
+<!-- Roteador e casca -->
+<script src="assets/js/app.js"></script>
+</body>
+</html>

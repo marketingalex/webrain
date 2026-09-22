@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WeBrain — verificação no navegador</title>
+<!-- Roteiro de verificação da aplicação montada. Os arquivos .test.cjs cobrem
+     lógica pura; isto cobre o que só existe com DOM: roteador, módulos do Codex,
+     formulários, tabelas, permissão e largura. Abra no navegador, ou rode em
+     Chrome headless com --dump-dom e leia o placar. -->
+<link rel="stylesheet" href="../assets/css/app.css">
+<link rel="stylesheet" href="../assets/css/codex-home.css">
+<link rel="stylesheet" href="../assets/css/codex-workspace.css">
+<link rel="stylesheet" href="../assets/css/codex-projects.css">
+<link rel="stylesheet" href="../assets/css/fase2.css">
+<link rel="stylesheet" href="../assets/css/pedidos.css">
+<style>
+  #resultado { font: 13px/1.7 ui-monospace, "JetBrains Mono", monospace; padding: 8px 20px 32px; white-space: pre-wrap; }
+  #placar { font: 600 16px/1.6 system-ui, sans-serif; padding: 20px 20px 0; }
+  .shell { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Casca igual à do index.html: o app.js espera exatamente estes nós. -->
+<div class="shell">
+  <aside class="sb" id="sidebar"></aside>
+  <div class="main">
+    <header class="tb" id="topbar"></header>
+    <main class="page" id="conteudo" tabindex="-1"></main>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div class="toasts" id="toast-root" aria-live="polite"></div>
+
+<h1 id="placar">Rodando…</h1>
+<pre id="resultado"></pre>
+
+<script>
+  window.__erros = [];
+  addEventListener('error', function (e) { window.__erros.push(location.hash + ': ' + e.message); });
+  addEventListener('unhandledrejection', function (e) { window.__erros.push(location.hash + ': promessa ' + e.reason); });
+</script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/charts.js"></script>
+<script src="../assets/js/pedidos.js"></script>
+<script src="../assets/js/forms.js"></script>
+<script src="../assets/js/views.js"></script>
+<script src="../assets/js/pedidos-views.js"></script>
+<script src="../assets/js/fase2-data.js"></script>
+<script src="../assets/js/fase2-forms.js"></script>
+<script src="../assets/js/fase2-views.js"></script>
+<!-- Administrativo. Faltavam aqui: sem eles a varredura de rotas passava pelas
+     tabelas antigas de views.js e dava as seis telas por boas enquanto as de
+     verdade quebravam. A ordem é a do index.html. -->
+<script src="../assets/js/adm-data.js"></script>
+<script src="../assets/js/adm-forms.js"></script>
+<script src="../assets/js/adm-views.js"></script>
+<!-- Comercial: funil do CRM, Leads e Clientes. -->
+<script src="../assets/js/comercial-data.js"></script>
+<script src="../assets/js/comercial-forms.js"></script>
+<script src="../assets/js/comercial-views.js"></script>
+<script src="../assets/js/operacoes.js"></script>
+<script src="../assets/js/codex-home.js"></script>
+<script src="../assets/js/codex-workspace.js"></script>
+<script src="../assets/js/codex-projects.js"></script>
+<script src="../assets/js/codex-projects-views.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+(function () {
+  const saida = [];
+  const log = (ok, texto, extra) => saida.push((ok ? 'PASS  ' : 'FALHA ') + texto + (extra ? '  ::  ' + extra : ''));
+  const titulo = (t) => saida.push('\n— ' + t + ' ' + '—'.repeat(Math.max(2, 58 - t.length)));
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const ir = async (h) => { location.hash = h; await espera(130); };
+  const q = (s) => document.querySelector(s);
+  const linhas = () => [].slice.call(document.querySelectorAll('#conteudo .tbl tbody tr')).filter((tr) => !tr.hidden);
+  const abaAtiva = () => { const a = q('#conteudo .tab[aria-selected="true"]'); return a ? a.textContent.trim() : '—'; };
+  // `hidden` só esconde se o CSS deixar: aqui a pergunta é o que está na tela.
+  const visivel = (el) => !!el && getComputedStyle(el).display !== 'none';
+  // O nome da operação em foco agora só existe no seletor do cabeçalho da lateral.
+  const operacaoNoSeletor = () => {
+    const s = q('.sb [data-operacao]');
+    if (s) return s.options[s.selectedIndex].textContent;
+    const fixa = q('.sb .sb__op__nome');
+    return fixa ? fixa.textContent : '';
+  };
+
+  async function modulosDoCodex() {
+    titulo('Módulos do Codex nas rotas da aplicação');
+    await ir('#/demandas');
+    log(!!q('.we-workspace'), '#/demandas monta WB.workspace');
+    log(q('#conteudo').className === 'page page--modulo', '#conteudo recebe page--modulo');
+    // A faixa de operação · área · sprint saiu do portal em 21/09/2026: quem
+    // precisa do nome da operação lê no seletor da lateral.
+    log(!q('.ctx') && !q('#contexto'), 'a faixa de contexto não existe mais em nenhuma página');
+
+    const sel = q('select[data-edit="status"]:not(:disabled)');
+    const id = sel && sel.dataset.id;
+    const antes = WB.data.demandas.find((d) => d.id === id);
+    const alvo = antes && antes.status === 'andamento' ? 'revisao' : 'andamento';
+    sel.value = alvo;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await espera(260);
+    log(WB.data.demandas.find((d) => d.id === id).status === alvo, 'edição de situação grava em WB.data', id + ' → ' + alvo);
+    log(/Alteração aplicada/.test(q('.ww-notice').textContent), 'módulo confirma a gravação');
+
+    const n0 = WB.data.demandas.length;
+    q('[data-new]').click();
+    await espera(140);
+    const chooser = q('#modal-root .pm-form');
+    chooser.elements.projeto.value = WB.data.projetos[0].id;
+    chooser.requestSubmit();
+    await espera(160);
+    const form = q('#modal-root .pm-form');
+    form.elements.nome.value = 'Demanda de verificação';
+    form.elements.tipo.value = 'tarefa';
+    form.elements.tipo.dispatchEvent(new Event('change'));
+    form.elements.pai.selectedIndex = 1;
+    form.elements.responsavel.value = WB.data.usuarioAtual;
+    form.elements.prazo.value = WB.d(7);
+    form.requestSubmit();
+    await espera(320);
+    const nova = WB.data.demandas.find((d) => d.nome === 'Demanda de verificação');
+    log(WB.data.demandas.length === n0 + 1 && !!nova, 'criação insere em WB.data', nova ? nova.id : '—');
+    log(!!nova && nova.status === 'afazer' && !!nova.sprint, 'demanda criada segue o contrato de data.js');
+
+    await ir('#/projetos');
+    log(!!q('.pm-gallery'), '#/projetos usa a galeria com filtros');
+    q('.pm-project a').click();
+    await espera(260);
+    log(location.hash.startsWith('#/projeto/'), '"Ver projeto" abre a ficha completa', location.hash);
+    log(q('.pm-tabs').textContent.includes('Termo de encerramento'), 'a ficha oferece termo de encerramento');
+
+    /* Desde 22/09/2026 o Histórico de solicitações é tela da aplicação
+       (pedidos-views.js), com uma aba por tipo no endereço. */
+    await ir('#/solicitacoes/coffe');
+    log(location.hash === '#/solicitacoes/coffe', '#/solicitacoes/:tipo guarda a aba no endereço', location.hash);
+    log(/Histórico de solicitações/.test(q('#conteudo h1').textContent), '#/solicitacoes é o Histórico de solicitações');
+    log(!!q('.pd-tabs [aria-selected="true"]') && /Coffee/.test(q('.pd-tabs [aria-selected="true"]').textContent), 'a aba Coffee está marcada');
+
+    const antesQtd = document.querySelectorAll('.pd-row').length;
+    const s0 = WB.data.solicitacoes.length;
+    q('#conteudo [data-acao="coffe"]').click();
+    await espera(220);
+    const pop = q('#modal-root');
+    log(pop.children.length > 0, 'botão de pedido abre o popup real de coffee');
+    const f = pop.querySelector('form');
+    const local = f.querySelector('[name="local"]'); local.selectedIndex = 1;
+    const qtd = f.querySelector('input[name^="qtd::"]');
+    log(!!qtd, 'o coffee para agora mostra o menu item por item');
+    if (qtd) qtd.value = '2';
+    const enviar = pop.querySelector('[data-enviar]');
+    if (enviar) enviar.click();
+    await espera(420);
+    log(WB.data.solicitacoes.length === s0 + 1, 'pedido registrado em WB.data', s0 + ' → ' + WB.data.solicitacoes.length);
+    log(WB.data.solicitacoes[0].status === 'em análise', 'o pedido nasce em análise', WB.data.solicitacoes[0].status);
+    log(!/SOL-\d/.test(pop.textContent), 'a confirmação não mostra número de pedido');
+    WB.fecharPopup();
+    await espera(160);
+    log(document.querySelectorAll('.pd-row').length === antesQtd + 1, 'o histórico já mostra o pedido novo');
+    WB.pedidos.apagar(WB.data.solicitacoes[0].id);
+    await espera(120);
+
+    await ir('#/cronograma');
+    log(!q('.we-workspace') && q('#conteudo').className === 'page', 'rota fora do módulo volta para as telas da aplicação');
+    await ir('#/home');
+    log(!!q('.we-home'), '#/home segue no módulo do Codex');
+    await ir('#/rota-que-nao-existe');
+    log(!q('.we-workspace') && !q('.we-home'), 'rota inexistente desmonta o módulo');
+  }
+
+  /* O Início depois da reformulação: saudação limpa, função e sprint em faixa
+     de destaque, políticas em galeria, os cinco pedidos juntos, News We com
+     capa e a agenda em grade de horas. E o que saiu daqui — demandas,
+     indicadores e atalhos —, que não pode ter voltado sem avisar. */
+  async function inicioReformulado() {
+    titulo('Início — políticas, pedidos, News We e agenda');
+    await ir('#/home');
+    const home = q('#conteudo .we-home');
+    log(!!home, 'o Início é o módulo do Codex');
+    if (!home) return;
+    log(!q('#conteudo [data-homeplus]'), 'não há mais bloco de complemento abaixo do módulo');
+
+    const saudacao = home.querySelector('.wh-heading h1');
+    log(!!saudacao && /^Olá, /.test(saudacao.textContent.trim()), 'a saudação ficou só em "Olá, fulana"',
+      saudacao ? saudacao.textContent.trim() : '—');
+    log(!/seu trabalho|seus encontros|precisa de atenção hoje/i.test(home.textContent),
+      'o subtítulo do dia saiu do cabeçalho');
+    const faixa = home.querySelector('.wh-context');
+    log(!!faixa && visivel(faixa), 'função e sprint ganharam faixa de destaque',
+      faixa ? faixa.textContent.trim() : '—');
+    log(!!faixa && faixa.textContent.indexOf(WB.eu().funcao) >= 0, 'a faixa mostra a função de quem está logado');
+
+    const politicas = home.querySelectorAll('.wh-policy');
+    log(politicas.length > 0, 'as políticas aparecem como galeria de botões', politicas.length + ' botões');
+    log(!!home.querySelector('.wh-policy .wh-policy-ic svg'), 'cada política tem ícone, não o documento');
+
+    const acoes = [].slice.call(home.querySelectorAll('.wh-action')).map((b) => b.dataset.action);
+    ['evento', 'compra', 'coffe', 'lead', 'cliente'].forEach((acao) =>
+      log(acoes.indexOf(acao) >= 0, 'pedido em destaque: ' + acao, acoes.join(' · ')));
+    log(!!home.querySelector('.wh-action .wh-action-ic svg'), 'os pedidos têm ícone');
+    log(!/Em movimento|começa uma solicitação/i.test(home.textContent), 'o texto de apoio dos pedidos saiu');
+
+    const news = home.querySelector('.wh-news');
+    log(!!news && news.textContent.indexOf('News We') >= 0, '"Avisos" virou News We');
+    log(news.querySelectorAll('.wh-news-cover').length === news.querySelectorAll('.wh-news-card').length,
+      'toda news tem pré-visualização na galeria',
+      news.querySelectorAll('.wh-news-cover').length + ' de ' + news.querySelectorAll('.wh-news-card').length);
+
+    /* Agenda em grade de horas. A tela abre na semana (o Codex mudou o padrão
+       em 22/09); o que se verifica aqui é a grade e a troca entre os dois
+       recortes, não qual deles vem primeiro. */
+    log(!!home.querySelector('.wh-cal') && !!home.querySelector('.wh-cal-rail'),
+      'a agenda é uma grade de horas');
+    q('#conteudo [data-agenda="week"]').click();
+    await espera(200);
+    const semana = q('#conteudo .wh-cal--week');
+    log(!!semana, 'a semana usa o mesmo calendário');
+    log(!!semana && semana.querySelectorAll('.wh-cal-day').length === 7,
+      'sete dias lado a lado, na horizontal', semana ? semana.querySelectorAll('.wh-cal-day').length + ' colunas' : '—');
+    q('#conteudo [data-agenda="today"]').click();
+    await espera(200);
+    const dia = q('#conteudo .wh-cal--day');
+    log(!!dia && dia.querySelectorAll('.wh-cal-day').length === 1, 'e "Hoje" volta para uma coluna só');
+
+    // O que saiu do Início — cada um tem tela ou lugar próprio agora.
+    log(!q('#conteudo .wh-task-list') && !q('#conteudo .wh-board'), 'a lista e o quadro de demandas saíram daqui');
+    log(!/Indicadores individuais/.test(home.textContent), 'os indicadores saíram daqui');
+    log(!q('#conteudo .sc__add'), 'os atalhos saíram daqui');
+
+    // …e onde eles foram parar: cabeçalho e lateral, em todas as páginas.
+    const topo = q('#topbar');
+    log(!!topo.querySelector('[data-busca-topo]'), 'a busca no cérebro we vive no cabeçalho');
+    log(!!topo.querySelector('.tbsc__add'), 'os atalhos e o botão de adicionar ficam no cabeçalho');
+    const lateral = q('#sidebar');
+    log(!!lateral.querySelector('.sb__head .sb__op'), 'o seletor de operação está no cabeçalho da lateral');
+    log(!lateral.querySelector('[data-sidebar-search]'), 'a busca saiu da lateral');
+    const fixos = [].slice.call(lateral.querySelectorAll('.sb__scroll > .navitem')).map((a) => a.textContent.trim());
+    // Quem aprova pedidos (a administração, aqui) tem também Solicitações a aprovar.
+    const daBase = ['Início', 'Minhas demandas', 'Histórico de solicitações', 'Solicitações a aprovar', 'Meus indicadores individuais'];
+    log(daBase.every((nome, i) => (fixos[i] || '').indexOf(nome) === 0),
+      'o topo fixo da lateral tem os cinco itens, nessa ordem', fixos.join(' · '));
+    await ir('#/indicadores');
+    log(/Meus indicadores individuais/.test(q('#conteudo h1').textContent), 'os indicadores têm aba própria',
+      q('#conteudo h1').textContent.trim());
+  }
+
+  async function tabelas() {
+    titulo('Busca e ordenação nas tabelas');
+    await ir('#/colaboradores');
+    log(!!q('#conteudo [data-tabela]'), 'tabela com mais de cinco linhas ganha a barra de ferramentas');
+    const total = linhas().length;
+    const conta = q('[data-tbl-conta]');
+    log(conta.textContent === total + ' registros', 'contagem inicial bate', conta.textContent);
+
+    const busca = q('[data-tbl-busca]');
+    const termo = q('#conteudo .tbl tbody tr td').textContent.trim().split(' ')[0];
+    busca.value = termo;
+    busca.dispatchEvent(new Event('input', { bubbles: true }));
+    await espera(60);
+    log(linhas().length > 0 && linhas().length < total, 'busca filtra as linhas', '"' + termo + '" → ' + linhas().length + ' de ' + total);
+    log(/ de /.test(conta.textContent), 'contagem mostra o recorte', conta.textContent);
+    busca.value = 'zzzqqq';
+    busca.dispatchEvent(new Event('input', { bubbles: true }));
+    await espera(60);
+    log(linhas().length === 0 && !q('[data-tbl-vazio]').hidden, 'sem resultado mostra o aviso');
+    busca.value = '';
+    busca.dispatchEvent(new Event('input', { bubbles: true }));
+    await espera(60);
+    log(linhas().length === total, 'apagar o filtro devolve tudo');
+
+    const b = q('[data-ordenar="0"]');
+    b.click();
+    await espera(60);
+    const asc = linhas().map((tr) => tr.cells[0].textContent.trim());
+    log(JSON.stringify(asc) === JSON.stringify(asc.slice().sort((x, y) => x.localeCompare(y, 'pt-BR'))), 'ordenação ascendente por texto', asc.slice(0, 3).join(' | '));
+    log(b.parentElement.getAttribute('aria-sort') === 'ascending', 'aria-sort marcado no cabeçalho');
+    b.click();
+    await espera(60);
+    log(JSON.stringify(linhas().map((tr) => tr.cells[0].textContent.trim())) === JSON.stringify(asc.slice().reverse()), 'segundo clique inverte a ordem');
+    log(b.parentElement.getAttribute('aria-sort') === 'descending', 'aria-sort vira descending');
+
+    await ir('#/id-visual');
+    let iData = -1;
+    document.querySelectorAll('#conteudo .tbl thead th').forEach((th, i) => { if (/Atualizado/.test(th.textContent)) iData = i; });
+    q('[data-ordenar="' + iData + '"]').click();
+    await espera(60);
+    const datas = linhas().map((tr) => tr.cells[iData].textContent.trim());
+    const chaveData = (d) => { const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})$/); return m ? Number(m[3] + m[2] + m[1]) : 0; };
+    log(datas.every((d, i) => i === 0 || chaveData(datas[i - 1]) <= chaveData(d)), 'data em dd/mm/aaaa ordena como data', datas.join(' '));
+
+    /* Era #/clientes. Em 22/09/2026 leads e clientes viraram duas telas, e a de
+       clientes ficou com cinco linhas — abaixo do limite em que a tabela ganha
+       ordenação. Contratos tem coluna Valor e linhas suficientes, e é o mesmo
+       `WB.tabela` sendo exercitado. */
+    await ir('#/contratos');
+    let iVal = -1;
+    document.querySelectorAll('#conteudo .tbl thead th').forEach((th, i) => { if (/Valor/.test(th.textContent)) iVal = i; });
+    const btnVal = iVal >= 0 ? q('[data-ordenar="' + iVal + '"]') : null;
+    log(!!btnVal, 'a tabela de contratos tem coluna Valor ordenável', 'coluna ' + iVal);
+    if (btnVal) btnVal.click();
+    await espera(60);
+    const cels = linhas().map((tr) => tr.cells[iVal].textContent.trim());
+    const numero = (v) => Number(String(v).replace(/[^0-9,]/g, '').replace(',', '.')) || 0;
+    const cheias = cels.filter((v) => v !== '—').map(numero);
+    log(cheias.every((v, i) => i === 0 || cheias[i - 1] <= v), 'valor em reais ordena como número', cheias.join(' '));
+    log(cels.filter((v) => v === '—').length === 0 || cels.slice(cheias.length).every((v) => v === '—'), 'célula sem valor fica no fim', cels.join(' '));
+
+    await ir('#/bens');
+    log(document.querySelectorAll('#conteudo .tbl tbody tr').length > 5 || !q('#conteudo [data-tabela]'), 'tabela de cinco linhas ou menos não ganha barra');
+  }
+
+  async function subniveis() {
+    titulo('Subníveis de Atas e Clientes');
+    await ir('#/atas');
+    log(document.querySelectorAll('#conteudo .tab').length === 4, 'atas têm quatro abas');
+    log(abaAtiva() === 'Todas', 'aba inicial é Todas', abaAtiva());
+    const todas = linhas().length;
+    await ir('#/atas/equipe');
+    log(abaAtiva() === 'Equipe / setor' && linhas().length <= todas, 'aba de equipe filtra', linhas().length + ' de ' + todas);
+    log(linhas().every((tr) => /Equipe/.test(tr.cells[1].textContent)), 'só atas de equipe na aba de equipe');
+    await ir('#/atas/tipo-invalido');
+    log(abaAtiva() === 'Todas', 'tipo inválido volta para Todas', abaAtiva());
+
+    const admin = WB.data.usuarioAtual;
+    const analista = WB.data.pessoas.find((p) => p.papel === 'analista');
+    if (analista) {
+      WB.data.usuarioAtual = analista.id;
+      await ir('#/atas/todas');
+      await ir('#/atas/diretoria');
+      const v = q('#conteudo .empty__t');
+      log(!!v && /restrit/i.test(v.textContent), 'analista vê a explicação em vez das atas de diretoria', v ? v.textContent : 'sem estado vazio');
+      await ir('#/atas/equipe');
+      log(linhas().length > 0, 'analista continua vendo as atas de equipe', linhas().length + ' linhas');
+      WB.data.usuarioAtual = admin;
+    }
+
+    await ir('#/clientes');
+    const abas = [].slice.call(document.querySelectorAll('#conteudo .tab')).map((a) => a.textContent.trim());
+    log(abas.length === WB.data.empresas.length + 1 && abas[0] === 'Grupo We', 'clientes têm Grupo We mais uma aba por operação', abas.join(' · '));
+    const totalC = linhas().length;
+    /* 22/09/2026: esta tela passou a mostrar SÓ clientes — leads têm a
+       própria em #/leads. Contar `WB.data.clientes` inteiro compararia a
+       tela com um total que ela deixou de mostrar. */
+    const porEmpresa = {};
+    WB.data.clientes.filter((c) => c.tipo === 'cliente')
+      .forEach((c) => { porEmpresa[c.empresa] = (porEmpresa[c.empresa] || 0) + 1; });
+    const alvo = Object.keys(porEmpresa)[0];
+    await ir('#/clientes/' + alvo);
+    log(linhas().length === porEmpresa[alvo], 'aba de operação filtra certo', alvo + ': ' + linhas().length + ' de ' + totalC);
+    const semCliente = WB.data.empresas.map((e) => e.id).filter((id) => !porEmpresa[id])[0];
+    if (semCliente) {
+      await ir('#/clientes/' + semCliente);
+      log(!!q('#conteudo .empty__t'), 'operação sem cliente mostra estado vazio com ação', semCliente);
+    }
+    await ir('#/clientes/grupo');
+    log(linhas().length === totalC, 'Grupo We volta a mostrar tudo', linhas().length + ' registros');
+
+    /* A lateral marca o item da operação em foco: dentro da We Incorporadora o
+       destino é a lista recortada dela; a lista do grupo inteiro é do Grupo We. */
+    WB.definirOperacao('weinc');
+    await ir('#/clientes/weinc');
+    let ativo = q('#sidebar .navitem[aria-current="page"]');
+    log(!!ativo && /Clientes/.test(ativo.textContent), 'na We Inc, a lateral marca a lista recortada dela',
+      ativo ? ativo.getAttribute('href') : 'nenhum');
+    WB.definirOperacao('grupo');
+    await ir('#/clientes/grupo');
+    ativo = q('#sidebar .navitem[aria-current="page"]');
+    log(!!ativo && /Clientes/.test(ativo.textContent), 'no Grupo We, a lateral marca Clientes na sub-rota',
+      ativo ? ativo.getAttribute('href') : 'nenhum');
+    WB.definirOperacao('weinc');
+  }
+
+  async function varredura() {
+    titulo('Varredura de rotas');
+    const rotas = ['home', 'demandas', 'projetos', 'projetos-arquivados', 'cronograma', 'painel-controle', 'agenda',
+      'solicitacoes', 'dash/grupo', 'dash/incorporadora', 'dash/clientes', 'dash/performance',
+      'governanca/metas', 'governanca/politicas', 'governanca/processos', 'governanca/treinamentos',
+      'atas', 'atas/equipe', 'atas/diretoria', 'atas/1a1', 'clientes', 'clientes/grupo',
+      'id-visual', 'galeria', 'links', 'crm', 'agentes', 'corretores', 'erp', 'contratos', 'colaboradores',
+      'colaboradores/ativos', 'colaboradores/desligados', 'colaboradores/todos',
+      'leads', 'leads/weinc', 'leads/casawe', 'clientes/nos',
+      'fornecedores', 'patrocinadores', 'bens', 'cnpjs', 'painel-adm', 'perfil', 'busca/bioma',
+      // Fase 2 — WeInvest e Nós Gastronomia.
+      'wi/dash/geral', 'wi/dash/clientes', 'wi/dash/performance', 'wi/crm',
+      'wi/leads', 'wi/clientes', 'wi/ativos', 'wi/parceiros', 'wi/negocios',
+      'wi/explorar/terrenos', 'wi/explorar/comparacao', 'wi/explorar/conexoes',
+      'wi/explorar/agentes', 'wi/explorar/atencao',
+      'nos/dash/geral', 'nos/dash/clientes', 'nos/dash/equipe', 'nos/dash/ranking', 'nos/dash/cmv',
+      'nos/menu', 'nos/menu/prato', 'nos/menu/bebida', 'nos/menu/descontinuados',
+      'nos/atendimentos/reclamacoes', 'nos/atendimentos/elogios', 'nos/atendimentos/todos',
+      'nos/estoque',
+      'governanca/metas/weinvest', 'governanca/politicas/nos',
+      // Identificador inexistente não pode quebrar a tela.
+      'wi/cliente/nao-existe', 'nos/item/nao-existe', 'busca/negroni'];
+    WB.data.wi.clientes.forEach((c) => rotas.push('wi/cliente/' + c.id));
+    WB.data.wi.ativos.forEach((x) => rotas.push('wi/ativo/' + x.id));
+    WB.data.wi.parceiros.forEach((x) => rotas.push('wi/parceiro/' + x.id));
+    WB.data.wi.negocios.forEach((x) => rotas.push('wi/negocio/' + x.id));
+    WB.data.nos.itens.forEach((x) => rotas.push('nos/item/' + x.id));
+    WB.data.nos.atendimentos.forEach((x) => rotas.push('nos/atendimento/' + x.id));
+    WB.data.empresas.forEach((e) => rotas.push('clientes/' + e.id));
+    WB.data.projetos.forEach((p) => rotas.push('projeto/' + p.id));
+    const sujas = [];
+    for (const r of rotas) {
+      await ir('#/' + r);
+      const html = q('#conteudo').innerHTML;
+      const achados = ['undefined', '[object Object]', 'NaN'].filter((t) => html.indexOf(t) >= 0);
+      if (achados.length) sujas.push('#/' + r + ' (' + achados.join(', ') + ')');
+      if (html.trim().length < 80) sujas.push('#/' + r + ' (vazia)');
+    }
+    log(!sujas.length, rotas.length + ' rotas renderizam sem sujeira', sujas.join(' | ') || 'nenhuma ocorrência');
+  }
+
+  /* Fase 2 — o que só existe com o popup montado: campos condicionais PF/PJ,
+     linhas dinâmicas, validação cruzada, conversão de lead pelo formulário e o
+     fluxo de descontinuar. */
+  async function fase2() {
+    titulo('Fase 2 — WeInvest e Nós Gastronomia');
+    const F2 = WB.fase2;
+    const pop = () => q('#modal-root');
+    const campo = (nome) => pop().querySelector('[name="' + nome + '"]');
+    const preencher = (nome, valor) => { const c = campo(nome); if (c) c.value = valor; };
+    const disparar = (el, tipo) => el.dispatchEvent(new Event(tipo || 'change', { bubbles: true }));
+    const enviar = async () => { pop().querySelector('[data-enviar]').click(); await espera(200); };
+    const erro = () => { const e = pop() && pop().querySelector('[data-erro]'); return e && !e.hidden ? e.textContent : ''; };
+
+    // --- portal por operação: o admin troca, a conta de operação não
+    const usuarioOriginal = WB.data.usuarioAtual;
+    WB.definirOperacao('weinvest');
+    await ir('#/wi/leads');
+    log(!!q('.sb [data-operacao]'), 'admin tem o seletor de operação na lateral');
+    log(!!q('.sb [data-nav-branch^="wi-"]'), 'a lateral mostra os ramos da WeInvest');
+    log(!q('.sb [data-nav-branch^="nos-"]'), 'e não mistura os ramos da Nós');
+    log(operacaoNoSeletor().indexOf('WeInvest') >= 0, 'o seletor da lateral nomeia a operação em foco', operacaoNoSeletor());
+
+    WB.definirOperacao('nos');
+    await ir('#/nos/menu');
+    log(!!q('.sb [data-nav-branch^="nos-"]') && !q('.sb [data-nav-branch^="wi-"]'),
+      'trocar de operação troca a árvore inteira');
+    log(operacaoNoSeletor().indexOf('Nós Gastronomia') >= 0, 'o seletor acompanha a troca', operacaoNoSeletor());
+
+    // Conta de operação: Juliana Prado é head da Nós, não vê mais nada.
+    WB.data.usuarioAtual = 'u6';
+    // Passar pelo início força o roteador: `ir` só age quando o hash muda.
+    await ir('#/home');
+    await ir('#/nos/menu');
+    log(WB.operacoesVisiveis().length === 1 && WB.operacoesVisiveis()[0] === 'nos',
+      'conta de operação enxerga uma operação só');
+    log(!q('.sb [data-operacao]') && !!q('.sb .sb__op--fixa'),
+      'sem seletor, com o nome da operação fixo na lateral');
+    log(!q('.sb [data-nav-branch^="wi-"]') && !q('.sb [data-nav-branch^="grupo-"]'),
+      'a lateral não mostra WeInvest nem Grupo We');
+
+    await ir('#/wi/negocios');
+    log(q('#conteudo').textContent.indexOf('outra operação') >= 0,
+      'rota de outra operação é recusada em vez de renderizada');
+    log(q('#conteudo').textContent.indexOf('não é autorização de servidor') >= 0,
+      'a recusa declara que o recorte é de interface');
+    await ir('#/nos/menu');
+    log(q('#conteudo').textContent.indexOf('Menu') >= 0, 'a operação dela continua acessível');
+    // Base comum continua valendo para todo mundo.
+    await ir('#/demandas');
+    log(!!q('.we-workspace'), 'minhas demandas seguem fora de qualquer operação');
+
+    WB.data.usuarioAtual = usuarioOriginal;
+    WB.definirOperacao('weinvest');
+    await ir('#/wi/leads');
+
+    // --- cliente WeInvest: PF/PJ condicional e ticket mínimo × máximo
+    F2.abrirClienteWi();
+    await espera(180);
+    log(visivel(pop().querySelector('[data-cond="pf"]')) && !visivel(pop().querySelector('[data-cond="pj"]')),
+      'ficha de cliente começa em PF, com os campos de PJ escondidos');
+    const pj = pop().querySelector('input[name="categoria"][value="pj"]');
+    pj.checked = true; disparar(pj);
+    await espera(80);
+    log(visivel(pop().querySelector('[data-cond="pj"]')) && !visivel(pop().querySelector('[data-cond="pf"]')),
+      'marcar PJ troca CPF/nome por CNPJ/razão social');
+    await enviar();
+    log(/razão social/i.test(erro()), 'PJ sem razão social é recusado', erro());
+    preencher('razaoSocial', 'Verificação Ltda.');
+    preencher('ticketMin', '5000000'); preencher('ticketMax', '1000000');
+    await enviar();
+    log(/ticket mínimo/i.test(erro()), 'ticket mínimo maior que o máximo é recusado', erro());
+    preencher('ticketMax', '9000000');
+    const clientesAntes = WB.data.wi.clientes.length;
+    await enviar();
+    await espera(260);
+    log(WB.data.wi.clientes.length === clientesAntes + 1, 'cliente PJ válido é gravado');
+    const criado = WB.data.wi.clientes.find((c) => c.razaoSocial === 'Verificação Ltda.');
+    log(!!criado && criado.categoria === 'pj' && criado.perfil.ticketMax === 9000000, 'o registro guarda categoria e perfil');
+    WB.fecharPopup(); await espera(120);
+
+    // --- negócio: linhas dinâmicas, validação e conversão de lead
+    const lead = WB.data.wi.leads.find((l) => l.status !== 'convertido');
+    const disponivel = F2.ativosVisiveis().find((a) => a.status === 'disponivel');
+    F2.abrirNegocio(null, { leadId: lead.id, ativoId: disponivel.id });
+    await espera(200);
+    log(visivel(pop().querySelector('[data-cond="lead"]')) && !visivel(pop().querySelector('[data-cond="cliente"]')),
+      'negócio aberto a partir de um lead começa no modo lead');
+    const box = pop().querySelector('[data-linhas="comissoes"]');
+    const antesLinhas = box.querySelectorAll('tbody tr').length;
+    box.querySelector('[data-linha-add]').click();
+    await espera(60);
+    log(box.querySelectorAll('tbody tr').length === antesLinhas + 1, 'o botão adiciona uma linha de comissão');
+    box.querySelector('tbody tr [data-linha-remover]').click();
+    await espera(60);
+    log(box.querySelectorAll('tbody tr').length === antesLinhas, 'remover devolve a tabela ao tamanho anterior');
+
+    campo('situacao').value = 'vendido'; disparar(campo('situacao'));
+    await enviar();
+    log(/valor negociado/i.test(erro()), 'venda sem valor negociado é recusada', erro());
+    preencher('valorNegociado', '1000000');
+    await enviar();
+    log(/data de fechamento/i.test(erro()), 'venda sem data de fechamento é recusada', erro());
+    preencher('dataFechamento', WB.d(0));
+    preencher('valorRecebido', '2000000');
+    await enviar();
+    log(/recebido/i.test(erro()), 'valor recebido acima do negociado é recusado', erro());
+    preencher('valorRecebido', '400000');
+    preencher('vgv', '1050000');
+    preencher('comissaoBrutaValor', '50000');
+    preencher('comissaoLiquidaValor', '80000');
+    await enviar();
+    log(/líquida/i.test(erro()), 'comissão líquida maior que a bruta é recusada', erro());
+    preencher('comissaoLiquidaValor', '45000');
+
+    const cAntes = WB.data.wi.clientes.length;
+    const nAntes = WB.data.wi.negocios.length;
+    await enviar();
+    await espera(320);
+    log(WB.data.wi.negocios.length === nAntes + 1, 'o negócio válido é registrado');
+    log(WB.data.wi.clientes.length === cAntes + 1, 'a venda converte o lead em cliente');
+    log(lead.status === 'convertido' && !!lead.clienteId, 'o lead fica marcado como convertido e aponta para a ficha');
+    const novoNegocio = WB.data.wi.negocios[0];
+    log(novoNegocio.clienteId === lead.clienteId, 'o negócio aponta para o cliente convertido');
+    log(F2.ativo(disponivel.id).status === 'vendido', 'o ativo passa para vendido');
+    const carteira = F2.cliente(lead.clienteId).carteira.filter((x) => x.ativoId === disponivel.id);
+    log(carteira.length === 1 && carteira[0].negocioId === novoNegocio.id, 'a compra entra na carteira com a origem registrada');
+    log(pop().textContent.indexOf('O que mudou junto') >= 0, 'a confirmação diz o que mudou junto');
+    WB.fecharPopup(); await espera(140);
+
+    // Reeditar e salvar de novo não duplica nada.
+    F2.abrirNegocio(novoNegocio.id);
+    await espera(220);
+    const c2 = WB.data.wi.clientes.length, n2 = WB.data.wi.negocios.length;
+    const cart2 = F2.cliente(lead.clienteId).carteira.length;
+    await enviar();
+    await espera(320);
+    log(WB.data.wi.negocios.length === n2 && WB.data.wi.clientes.length === c2,
+      'salvar o mesmo negócio de novo não cria cópia de negócio nem de cliente');
+    log(F2.cliente(lead.clienteId).carteira.length === cart2, 'nem duplica a linha da carteira');
+    WB.fecharPopup(); await espera(140);
+
+    // --- a ficha do cliente separa carteira preexistente de compra
+    await ir('#/wi/cliente/' + lead.clienteId);
+    const ficha = q('#conteudo').textContent;
+    log(ficha.indexOf('Carteira imobiliária') >= 0 && ficha.indexOf('Compras pela WeInvest') >= 0,
+      'a ficha mostra carteira e compras como blocos separados');
+    log(ficha.indexOf('VGV comprado') >= 0, 'o resumo traz VGV comprado');
+
+    // --- menu: margem ao vivo, bebida sem campos de prato, descontinuar
+    F2.abrirItemMenu('prato');
+    await espera(180);
+    log(!!campo('servePessoas') && !!campo('tempoPreparo'), 'o formulário de prato tem porções e tempo de preparo');
+    const saida2 = pop().querySelector('[data-margem]');
+    preencher('precoVenda', '100'); preencher('custoEstimado', '30');
+    disparar(campo('precoVenda'), 'input');
+    await espera(60);
+    log(/70,0%/.test(saida2.textContent) && /30,0%/.test(saida2.textContent), 'a margem e o CMV são calculados na hora', saida2.textContent);
+    preencher('precoVenda', '0');
+    disparar(campo('precoVenda'), 'input');
+    await espera(60);
+    log(/sem dado/.test(saida2.textContent), 'preço zero vira "sem dado", não 0%', saida2.textContent);
+    WB.fecharPopup(); await espera(120);
+
+    F2.abrirItemMenu('bebida');
+    await espera(180);
+    log(!campo('servePessoas') && !campo('tempoPreparo'), 'o formulário de bebida não copia os campos exclusivos de prato');
+    log(pop().textContent.indexOf('leitura parcial') >= 0 || pop().textContent.indexOf('Leitura parcial') >= 0,
+      'a bebida declara que a foto está cortada');
+    preencher('nome', 'Bebida de verificação');
+    campo('categoria').value = 'Café';
+    const itensAntes = WB.data.nos.itens.length;
+    await enviar();
+    await espera(260);
+    log(WB.data.nos.itens.length === itensAntes + 1, 'a bebida é adicionada ao menu');
+    const bebida = WB.data.nos.itens.find((i) => i.nome === 'Bebida de verificação');
+    log(!!bebida && bebida.tipo === 'bebida' && bebida.servePessoas === null, 'a bebida é gravada sem os campos de prato');
+
+    F2.abrirRemoverItem(bebida.id);
+    await espera(180);
+    log(pop().textContent.indexOf('não é o mesmo que apagar') >= 0, 'excluir do menu explica a diferença antes de agir');
+    pop().querySelector('[data-descontinuar]').click();
+    await espera(240);
+    log(!!F2.item(bebida.id) && F2.item(bebida.id).status === 'descontinuado', 'descontinuar preserva o cadastro');
+    F2.reativarItem(bebida.id);
+    await espera(160);
+    log(F2.item(bebida.id).status === 'ativo', 'reativar devolve o item ao cardápio');
+
+    // --- reclamação: datas coerentes e fluxo aberta → tratativa → resolvida
+    F2.abrirReclamacao();
+    await espera(180);
+    preencher('clienteNome', 'Mesa de verificação');
+    campo('canal').value = 'Presencial';
+    campo('categoria').value = 'Atendimento';
+    campo('gravidade').value = 'leve';
+    preencher('descricao', 'Registro de verificação.');
+    campo('status').value = 'resolvida';
+    await enviar();
+    log(/data de resolução|o que foi feito/i.test(erro()), 'resolver sem ação e sem data é recusado', erro());
+    preencher('acaoTomada', 'Pedido de desculpas.');
+    preencher('dataResolucao', WB.d(-30));
+    await enviar();
+    log(/anterior ao ocorrido/i.test(erro()), 'resolução anterior ao ocorrido é recusada', erro());
+    preencher('dataResolucao', WB.d(0));
+    await enviar();
+    log(/quem responde/i.test(erro()), 'sair de "aberta" sem responsável é recusado', erro());
+    campo('responsavelResposta').value = 'u6';
+    const atAntes = WB.data.nos.atendimentos.length;
+    await enviar();
+    await espera(260);
+    log(WB.data.nos.atendimentos.length === atAntes + 1, 'a reclamação válida é registrada');
+    const recl = WB.data.nos.atendimentos[0];
+    log(recl.tipo === 'reclamacao' && recl.status === 'resolvida' && !!recl.dataResolucao,
+      'a reclamação chega a resolvida com ação e data registradas');
+
+    // --- contadores do item conferem com os registros
+    const alvoItem = WB.data.nos.itens.find((i) => F2.contadoresItem(i.id).elogios + F2.contadoresItem(i.id).reclamacoes > 0);
+    if (alvoItem) {
+      await ir('#/nos/item/' + alvoItem.id);
+      const cont = F2.contadoresItem(alvoItem.id);
+      const vinculadas = WB.data.nos.atendimentos.filter((a) => a.itemId === alvoItem.id).length;
+      log(cont.elogios + cont.reclamacoes === vinculadas, 'os contadores do item batem com os atendimentos vinculados');
+      log(q('#conteudo').textContent.indexOf('Atendimentos vinculados') >= 0, 'a ficha do item lista os atendimentos');
+    }
+
+    // --- ranking sem fonte não inventa número
+    await ir('#/nos/dash/ranking');
+    log(q('#conteudo').textContent.indexOf('Sem dados de pedidos') >= 0, 'o ranking de pedidos assume que não tem fonte');
+
+    // --- persistência: o gravado volta em outra sessão do mesmo navegador
+    const bruto = JSON.parse(localStorage.getItem('webrain.v1') || '{}');
+    log(!!bruto['f2.nos.itens'] && bruto['f2.nos.itens'].itens.some((i) => i.id === bebida.id),
+      'o item criado está no armazenamento local, com versão de formato');
+    log(!!bruto['f2.wi.negocios'] && bruto['f2.wi.negocios'].itens.some((n) => n.id === novoNegocio.id),
+      'o negócio criado também');
+
+    // E o teste de verdade: abrir a aplicação de novo e procurar o registro.
+    // Em file:// isto depende de --allow-file-access-from-files; sem a flag,
+    // o roteiro avisa em vez de fingir que verificou.
+    const caixa = document.createElement('div');
+    caixa.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(caixa);
+    const frame = document.createElement('iframe');
+    frame.style.cssText = 'width:1200px;height:800px;border:0';
+    frame.src = '../index.html#/nos/menu';
+    caixa.appendChild(frame);
+    await new Promise((r) => frame.addEventListener('load', r));
+    await espera(600);
+    if (!frame.contentDocument) {
+      saida.push('PULADO  recarga real da aplicação: o navegador bloqueou a leitura do iframe em file:// ' +
+        '(rode com --allow-file-access-from-files ou sirva a pasta por HTTP)');
+    } else {
+      const wb2 = frame.contentWindow.WB;
+      log(!!(wb2 && wb2.fase2 && wb2.fase2.item(bebida.id)), 'o item criado volta depois de recarregar a aplicação');
+      log(!!(wb2 && wb2.fase2 && wb2.fase2.negocio(novoNegocio.id)), 'o negócio criado volta depois de recarregar');
+      const cli = wb2 && wb2.fase2 && wb2.fase2.cliente(lead.clienteId);
+      log(!!cli && cli.carteira.some((x) => x.negocioId === novoNegocio.id),
+        'o cliente convertido e a carteira dele também voltam');
+      log(!!wb2 && wb2.data.nos.itens.filter((i) => i.id === bebida.id).length === 1,
+        'recarregar não duplica o registro gravado');
+      log(!!wb2 && wb2.data.nos.itens.some((i) => i.id === 'NOSI-0001'),
+        'as sementes de demonstração continuam ao lado do que foi cadastrado');
+    }
+    caixa.remove();
+  }
+
+  async function medidas() {
+    titulo('Largura e tema');
+    const caixa = document.createElement('div');
+    caixa.style.cssText = 'position:fixed;left:-9999px;top:0';
+    document.body.appendChild(caixa);
+
+    async function medir(rota, largura, tema) {
+      const f = document.createElement('iframe');
+      f.style.cssText = 'width:' + largura + 'px;height:900px;border:0';
+      f.src = '../index.html#/' + rota;
+      caixa.appendChild(f);
+      await new Promise((r) => f.addEventListener('load', r));
+      await espera(380);
+      const d = f.contentDocument;
+      const w = f.contentWindow;
+      // Em file://, ler o iframe da pasta de cima só é permitido com
+      // --allow-file-access-from-files (ou servindo a pasta por HTTP).
+      if (!d) { f.remove(); return null; }
+      if (largura <= 880) {
+        const sidebar = d.getElementById('sidebar');
+        const link = sidebar.querySelector('a[href]');
+        log(w.getComputedStyle(sidebar).visibility === 'hidden', 'menu móvel fechado fica invisível para teclado');
+        if (link) {
+          link.focus();
+          log(d.activeElement !== link, 'link do menu fechado não recebe foco');
+        }
+        d.querySelector('[data-nav]').click();
+        log(w.getComputedStyle(sidebar).visibility === 'visible', 'abrir menu móvel restaura visibilidade');
+        if (link) {
+          link.focus();
+          log(d.activeElement === link, 'link do menu aberto recebe foco');
+        }
+        d.body.classList.remove('nav-open');
+      }
+      if (tema) { d.documentElement.setAttribute('data-theme', tema); await espera(140); }
+      const ws = d.querySelector('.we-workspace');
+      const medido = { sobra: d.body.scrollWidth - d.body.clientWidth, fundo: ws ? w.getComputedStyle(ws).backgroundColor : '' };
+      f.remove();
+      return medido;
+    }
+
+    const teste = await medir('demandas', 1440);
+    if (!teste) {
+      saida.push('PULADO  medição de largura e tema: o navegador bloqueou a leitura do iframe.');
+      saida.push('        Rode com --allow-file-access-from-files, ou sirva a pasta por HTTP.');
+      caixa.remove();
+      return;
+    }
+
+    /* `crm` entrou porque o quadro do funil rola na horizontal por dentro: se
+       essa rolagem vazar para a página, a tela inteira anda de lado no celular. */
+    for (const rota of ['demandas', 'projetos', 'solicitacoes', 'clientes', 'leads', 'crm', 'colaboradores']) {
+      for (const l of [360, 768, 1440]) {
+        const m = await medir(rota, l);
+        log(m.sobra <= 1, 'sem rolagem horizontal em #/' + rota + ' a ' + l + 'px', 'sobra ' + m.sobra + 'px');
+      }
+    }
+    const claro = await medir('demandas', 1440, 'light');
+    const escuro = await medir('demandas', 1440, 'dark');
+    log(claro.fundo !== escuro.fundo, 'tema escuro muda o fundo do módulo', claro.fundo + ' → ' + escuro.fundo);
+    caixa.remove();
+  }
+  /* A ficha da demanda no DOM de verdade (22/09, segunda rodada): caminho,
+     período, chat, referências, editar e apagar. O que os testes de node
+     cobrem em HTML, aqui é o painel aberto de fato — inclusive o comentário
+     que precisa aparecer sem fechar a ficha. */
+  async function fichaDaDemanda() {
+    titulo('Demandas — ficha completa, seleção e colunas');
+    await ir('#/demandas');
+    const tela = q('#conteudo .we-workspace');
+    log(!!tela, 'a tela de demandas monta');
+    if (!tela) return;
+
+    // Seleção: caixinha ao lado do nome, sem a barra de "selecionar tudo".
+    log(!q('#conteudo [data-all]'), 'a caixa "Selecionar resultados" saiu');
+    /* Linha de contexto (o entregável de outra pessoa) tem a caixinha
+       desabilitada e não entra no recorte — a seleção se testa numa linha do
+       próprio recorte. */
+    const caixa = q('#conteudo tr:not(.ww-context-row) .ww-check[data-select]');
+    log(!!caixa, 'cada linha tem a caixinha de seleção, sem rótulo ao lado');
+    if (caixa) {
+      caixa.checked = true;
+      caixa.dispatchEvent(new Event('change', { bubbles: true }));
+      await espera(160);
+      log(!!q('#conteudo .ww-batch'), 'marcar uma linha abre a barra de ação em lote');
+      const limpar = q('#conteudo [data-unselect]');
+      if (limpar) { limpar.click(); await espera(140); }
+    }
+
+    // Colunas: o painel liga e desliga, e o cabeçalho acompanha.
+    const botaoColunas = q('#conteudo [data-colunas]');
+    log(!!botaoColunas, 'a tabela oferece escolher colunas');
+    if (botaoColunas) {
+      botaoColunas.click();
+      await espera(150);
+      const opcao = q('#conteudo [data-coluna="prioridade"]');
+      log(!!opcao, 'o painel lista as colunas');
+      // Um cabeçalho por grupo: contar o primeiro evita somar as colunas de todos.
+      const colunasDe = () => { const linha = q('#conteudo thead tr'); return linha ? linha.children.length : 0; };
+      const antes = colunasDe();
+      if (opcao) {
+        opcao.checked = false;
+        opcao.dispatchEvent(new Event('change', { bubbles: true }));
+        await espera(180);
+        log(colunasDe() === antes - 1, 'desligar a coluna tira a coluna da tabela', antes + ' → ' + colunasDe());
+        const devolta = q('#conteudo [data-coluna="prioridade"]');
+        if (devolta) { devolta.checked = true; devolta.dispatchEvent(new Event('change', { bubbles: true })); await espera(180); }
+      }
+      const fechar = q('#conteudo [data-colunas]');
+      if (fechar) { fechar.click(); await espera(120); }
+    }
+
+    // Período: "Escolher" abre as duas datas.
+    const escolher = q('#conteudo [data-periodo="intervalo"]');
+    log(!!escolher, 'o período tem "Escolher"');
+    if (escolher) {
+      escolher.click();
+      await espera(170);
+      log(!!q('#conteudo [data-filter="de"]') && !!q('#conteudo [data-filter="ate"]'), 'e abre a data inicial e a final');
+      const tudo = q('#conteudo [data-periodo="tudo"]');
+      if (tudo) { tudo.click(); await espera(170); }
+    }
+
+    // A ficha: caminho, período e quem abriu.
+    const primeira = q('#conteudo .ww-item-name');
+    log(!!primeira, 'a lista tem demanda para abrir');
+    if (!primeira) return;
+    primeira.click();
+    await espera(220);
+    const painel = q('.ww-drawer');
+    log(!!painel && painel.open, 'clicar na demanda abre a ficha');
+    if (!painel) return;
+    log(!!painel.querySelector('.ww-detail-chip--projeto'), 'o projeto abre a ficha, em destaque');
+    log(/Período/.test(painel.textContent), 'início e prazo aparecem como período');
+    log(/Aberta por/.test(painel.textContent), 'a ficha diz quem abriu a demanda');
+    log(/Conversa da demanda/.test(painel.textContent), 'a ficha tem o chat interno');
+    log(!!painel.querySelector('[data-anexo]'), 'e o campo de anexar referência');
+
+    // Comentar: a mensagem entra sem fechar a ficha.
+    const form = painel.querySelector('[data-chat-form]');
+    log(!!form, 'o chat tem campo para escrever');
+    if (form) {
+      const antes = painel.querySelectorAll('.ww-chat-msg').length;
+      form.querySelector('textarea').value = 'Verificação automática do chat.';
+      form.querySelector('[type=submit]').click();
+      await espera(420);
+      const depois = q('.ww-drawer');
+      log(!!depois && depois.open, 'a ficha continua aberta depois de comentar');
+      log(depois.querySelectorAll('.ww-chat-msg').length === antes + 1, 'o comentário entra na conversa', antes + ' → ' + depois.querySelectorAll('.ww-chat-msg').length);
+      log(depois.textContent.indexOf('Verificação automática do chat.') >= 0, 'com o texto que foi escrito');
+      const id = depois.querySelector('[data-chat-form]').dataset.id;
+      const gravado = WB.data.demandas.find((d) => d.id === id);
+      log(!!gravado && (gravado.comentarios || []).some((c) => c.texto === 'Verificação automática do chat.'), 'e fica gravado na demanda, não só na tela');
+    }
+
+    // Editar e apagar: existem para quem pode, e a confirmação avisa antes.
+    const editar = q('.ww-drawer [data-editar]');
+    log(!!editar, 'a ficha deixa editar a demanda');
+    const apagar = q('.ww-drawer [data-apagar]');
+    log(!!apagar, 'e deixa apagar');
+    if (apagar) {
+      apagar.click();
+      await espera(200);
+      const confirma = q('.ww-drawer');
+      log(/avisad|avisar|ninguém precisa/i.test(confirma.textContent), 'antes de apagar, a tela diz quem será avisado');
+      const fechar = confirma.querySelector('[aria-label="Fechar painel"]');
+      if (fechar) { fechar.click(); await espera(160); }
+    }
+  }
+
+
+  /* A tela de Demandas depois da reformulação: os quatro números que eram do
+     Início, as três visões (a de calendário é nova), a caixa única de busca e
+     filtros com agrupar e ordem ao lado. O botão "Minhas demandas" saiu — a
+     tela já é a das minhas. Fecha com Minhas solicitações e com o selo de
+     "novo" das News, que continua valendo 24 horas. */
+  async function demandasReformulada() {
+    titulo('Demandas e solicitações — números, visões e filtro único');
+    await ir('#/demandas');
+    const tela = q('#conteudo .we-workspace');
+    log(!!tela, '#/demandas monta o módulo');
+    if (!tela) return;
+    log(tela.querySelector('h1').textContent.trim() === 'Demandas', 'o título é só "Demandas"',
+      tela.querySelector('h1').textContent.trim());
+    log(!tela.querySelector('.ww-eyebrow'), 'sem kicker acima do título');
+
+    const numeros = [].slice.call(tela.querySelectorAll('.ww-metric span')).map((s) => s.textContent.trim());
+    ['Em aberto', 'Para hoje', 'Precisam de atenção', 'Concluídas'].forEach((r) =>
+      log(numeros.indexOf(r) >= 0, 'o número "' + r + '" veio do Início para cá', numeros.join(' · ')));
+
+    const visoes = [].slice.call(tela.querySelectorAll('[data-view]')).map((b) => b.dataset.view);
+    log(visoes.join(',') === 'table,kanban,calendar', 'três visões: tabela, kanban e calendário', visoes.join(' · '));
+    log(!tela.querySelector('[data-filter="mine"]'), 'o botão "Minhas demandas" saiu do filtro');
+
+    const caixa = tela.querySelector('.ww-filterbox');
+    log(!!caixa, 'busca e filtros vivem numa caixa só');
+    log(!!caixa.querySelector('[data-filter="query"]') && !!caixa.querySelector('[data-filtros]'),
+      'a caixa tem a busca e o botão de filtros');
+    log(!!caixa.querySelector('[data-filter="group"]') && !!caixa.querySelector('[data-filter="sort"]'),
+      'agrupar e ordem ficam na mesma linha');
+    log(!caixa.querySelector('[data-filter="project"]'), 'projeto e situação começam recolhidos');
+    caixa.querySelector('[data-filtros]').click();
+    await espera(180);
+    log(!!q('#conteudo .ww-filterpanel [data-filter="project"]') && !!q('#conteudo .ww-filterpanel [data-late]'),
+      'o botão abre projeto, situação e "só atrasadas"');
+    q('#conteudo [data-filtros]').click();
+    await espera(150);
+
+    // Calendário: um mês pelo prazo. Demanda sem prazo fica avisada, não inventada.
+    q('#conteudo [data-view="calendar"]').click();
+    await espera(220);
+    const cal = q('#conteudo .ww-cal');
+    log(!!cal, 'a visão de calendário monta');
+    log(!!cal && cal.querySelectorAll('.ww-cal-week span').length === 7, 'a semana do calendário tem sete colunas');
+    const noCalendario = cal ? cal.querySelectorAll('.ww-cal-task').length : -1;
+    const doMes = WB.data.demandas.filter((d) => d.responsavel === WB.data.usuarioAtual &&
+      /^\d{4}-\d{2}-\d{2}$/.test(d.prazo || '') && d.prazo.slice(0, 7) === WB.d(0).slice(0, 7)).length;
+    log(noCalendario >= 0 && noCalendario <= doMes && !!cal.querySelector('.ww-cal-bar'),
+      'o mês mostra as demandas com prazo e navega entre meses', noCalendario + ' de ' + doMes + ' no mês');
+    q('#conteudo [data-view="table"]').click();
+    await espera(180);
+
+    /* 22/09/2026 — Histórico de solicitações: abas por tipo, situação em
+       destaque, lixeira na linha, edição só dentro do pedido, com aviso. */
+    await ir('#/solicitacoes/compra');
+    const sol = q('#conteudo');
+    log(sol.querySelector('h1').textContent.trim() === 'Histórico de solicitações', 'o título é "Histórico de solicitações"');
+    log(sol.querySelectorAll('.pd-tabs .tab').length === 3, 'uma aba para eventos, compra ou pagamento e coffee');
+    log(!!sol.querySelector('.pd-row .pd-status--lg'), 'a situação aparece em destaque em cada pedido');
+    log(!sol.querySelector('[data-request-edit]') && !sol.querySelector('.pd-row [data-editar]'), 'a lista não tem mais botão de editar');
+    log(!!sol.querySelector('[data-pedido-apagar]'), 'cada pedido tem a lixeira');
+    log(!sol.querySelector('.ag') && !sol.querySelector('.wh-cal'), 'a agenda não aparece mais aqui');
+    sol.querySelector('[data-pedido-abrir]').click();
+    await espera(200);
+    let det = q('#modal-root');
+    log(det.querySelectorAll('.pd-secao').length >= 2, 'o pedido abre separado por categoria', det.querySelectorAll('.pd-secao').length + ' seções');
+    log(!!det.querySelector('[data-editar]') && !!det.querySelector('[data-apagar]'), 'dentro do pedido: editar e apagar');
+    det.querySelector('[data-editar]').click();
+    await espera(220);
+    det = q('#modal-root');
+    const salvarEd = det.querySelector('[data-enviar]');
+    log(!!salvarEd && /Salvar alterações/.test(salvarEd.textContent), 'editar abre o pedido preenchido, com "Salvar alterações"');
+    log(det.querySelector('[name="descricao"]').value.length > 0, 'o formulário vem com o que foi preenchido');
+    salvarEd.click();
+    await espera(520);
+    const aviso = document.querySelector('.pd-confirm');
+    log(!!aviso && /volta para "Em análise"/.test(aviso.textContent), 'antes de salvar, avisa que o pedido volta para análise');
+    if (aviso) aviso.querySelector('[data-nao]').click();
+    await espera(120);
+    log(!document.querySelector('.pd-confirm') && !!q('#modal-root form'), 'desistir mantém o formulário aberto');
+    WB.fecharPopup();
+    await espera(120);
+    sol.querySelector('[data-pedido-apagar]').click();
+    await espera(120);
+    const avisoLixo = document.querySelector('.pd-confirm');
+    log(!!avisoLixo && /responsável pela aprovação/.test(avisoLixo.textContent), 'apagar pede confirmação e diz que some para quem aprova');
+    if (avisoLixo) avisoLixo.querySelector('[data-nao]').click();
+    await espera(80);
+
+    await ir('#/aprovacoes/coffe');
+    const apr = q('#conteudo');
+    log(apr.querySelector('h1').textContent.trim() === 'Solicitações a aprovar', 'a administração tem "Solicitações a aprovar"');
+    log(!!apr.querySelector('[data-config-aprovacao]') && !!apr.querySelector('[data-editar-cardapio]'), 'no coffee: configurar acesso e cardápio');
+    log(!!apr.querySelector('[data-pedido-status]'), 'quem aprova muda a situação na própria linha');
+
+    // B03 — o selo de "novo" continua sendo dos avisos de menos de 24 horas.
+    await ir('#/home');
+    const novos = document.querySelectorAll('#conteudo .wh-tag--new').length;
+    const esperados = WB.home.select(WB.data, { period: 'all', query: '', agenda: 'week', sprint: 'todas', todasNews: WB.pode('gerirNews') }, new Date())
+      .news.filter((n) => WB.avisoNovo(n).novo).length;
+    log(novos === esperados, 'o selo "novo" aparece só nos avisos de menos de 24 h', novos + ' de ' + esperados);
+  }
+
+  /* Correções A01–A07 da auditoria das imagens, na parte que só existe com o
+     popup renderizado: revelar o local "Outro", calcular a duração, voltar ao
+     bloco incompleto, gravar o briefing inteiro e ler um aviso sem cair no
+     formulário de publicação. */
+  async function pedidos() {
+    titulo('Solicitações — correções da auditoria');
+    await ir('#/home');
+
+    /* A05, refeito em 22/09/2026 — o local aceita item novo, e o coffee
+       separa "agora" (só o da casa) de "agendar" (premium e jantar). */
+    WB.abrirCoffe();
+    await espera(160);
+    let pop = q('#modal-root');
+    const local = pop.querySelector('[name="local"]');
+    log(!visivel(pop.querySelector('[data-agendamento]')), 'o bloco de agendamento começa escondido de fato');
+    local.value = '__novo__';
+    local.dispatchEvent(new Event('change', { bubbles: true }));
+    await espera(60);
+    const addLocal = local.closest('[data-select-aberto]').querySelector('.pd-add');
+    log(visivel(addLocal), '"+ Adicionar novo…" abre o campo do local novo');
+    addLocal.querySelector('input').value = 'Varanda da verificação';
+    addLocal.querySelector('button').click();
+    await espera(60);
+    log(local.value === 'Varanda da verificação' && WB.data.opcoes.locais.indexOf('Varanda da verificação') >= 0, 'o local novo entra selecionado e fica na lista');
+    const nomesCard = () => [].map.call(pop.querySelectorAll('[name="cardapio"]'), (r) => r.value);
+    log(nomesCard().join() === 'casa', 'para agora, só o coffee da casa', nomesCard().join());
+    log(/15 minutos/.test(pop.textContent), 'o pedido para agora avisa dos 15 minutos de preparo');
+    pop.querySelector('[name="quando"][value="agendar"]').click();
+    await espera(80);
+    log(['premium1', 'premium2', 'jantar1', 'jantar2'].every((id) => nomesCard().indexOf(id) >= 0), 'agendar abre premium e jantar', nomesCard().join());
+    pop.querySelector('[name="cardapio"][value="jantar1"]').click();
+    await espera(80);
+    log(!!pop.querySelector('[name="bebidas"]') && !pop.querySelector('input[name^="qtd::"]'), 'jantar pede restrições e bebidas, não quantidade por item');
+    pop.querySelector('[name="cardapio"][value="premium1"]').click();
+    await espera(80);
+    log(pop.querySelectorAll('input[name^="qtd::"]').length >= 5, 'coffee premium é pedido item por item, com quantidade');
+    WB.data.opcoes.locais.splice(WB.data.opcoes.locais.indexOf('Varanda da verificação'), 1);
+    WB.fecharPopup();
+    await espera(120);
+
+    // A07 — duração prevista
+    WB.abrirEvento();
+    await espera(160);
+    pop = q('#modal-root');
+    const ini = pop.querySelector('[name="inicio"]');
+    const fim = pop.querySelector('[name="termino"]');
+    const dur = pop.querySelector('[data-duracao]');
+    log(!!dur, 'o bloco 1 mostra a duração prevista');
+    log(!visivel(pop.querySelector('[data-voltar]')) && !visivel(pop.querySelector('[data-enviar]')),
+      'no primeiro bloco só aparecem Cancelar e Avançar');
+    log(!visivel(pop.querySelector('[data-bloco="4"]')), 'os blocos seguintes ficam mesmo escondidos');
+    ini.value = '19:00'; fim.value = '23:00';
+    ini.dispatchEvent(new Event('input', { bubbles: true }));
+    await espera(60);
+    log(/4h/.test(dur.textContent), 'duração de 19:00 às 23:00 é 4h', dur.textContent);
+    fim.value = '02:00'; ini.value = '22:00';
+    fim.dispatchEvent(new Event('input', { bubbles: true }));
+    await espera(60);
+    log(/dia seguinte/.test(dur.textContent), 'término antes do início é declarado como virada do dia', dur.textContent);
+
+    // A07/A01 — bloco incompleto traz a pessoa de volta, e o envio grava tudo
+    pop.querySelector('[data-passo="7"]').click();
+    await espera(80);
+    pop.querySelector('[data-enviar]').click();
+    await espera(160);
+    log(visivel(pop.querySelector('[data-bloco="1"]')), 'campo obrigatório vazio reabre o bloco onde ele está');
+
+    const s0 = WB.data.solicitacoes.length;
+    const preencher = (nome, valor) => { const c = pop.querySelector('[name="' + nome + '"]'); if (c) c.value = valor; };
+    preencher('nome', 'Evento de verificação');
+    preencher('descricaoCurta', 'Frase curta do briefing');
+    preencher('data', WB.d(10));
+    preencher('inicio', '19:00'); preencher('termino', '23:00');
+    preencher('objetivo', 'Objetivo declarado');
+    preencher('dinamica', 'Roteiro do evento');
+    preencher('participantes', '40');
+    preencher('perfil', 'Clientes e parceiros');
+    preencher('responsavelEvento', 'u9');
+    // A lista de participantes é arquivo desde 22/09/2026.
+    const dt = new DataTransfer();
+    dt.items.add(new File(['nome\nAna\nBruno'], 'convidados.csv', { type: 'text/csv' }));
+    pop.querySelector('[name="listaArquivo"]').files = dt.files;
+    const orc = pop.querySelector('[name="orcamento"]');
+    orc.value = '1500000';
+    orc.dispatchEvent(new Event('input', { bubbles: true }));
+    log(/R\$\s?15\.000,00/.test(orc.value), 'o orçamento se formata em real enquanto se digita', orc.value);
+    preencher('cardapio', 'Finger food');
+    preencher('restricoes', 'Duas pessoas sem glúten');
+    preencher('mensagem', 'Mensagem-chave da marca');
+    preencher('divulgacao', 'Stories na semana');
+    preencher('outras', 'Entrada pelo portão 2');
+    ['tipo', 'alimentacao'].forEach((g) => { const r = pop.querySelector('[name="' + g + '"]'); if (r) r.checked = true; });
+    pop.querySelector('[data-passo="7"]').click();
+    await espera(80);
+    pop.querySelector('[data-enviar]').click();
+    /* O envio lê o arquivo de convidados antes de gravar; a leitura às vezes
+       passa de meio segundo. Espera fixa dava falha intermitente com o pedido
+       gravado logo depois — agora aguarda o pedido chegar, até 10 s. No Chrome
+       headless com --virtual-time-budget o relógio dos timers é simulado e a
+       leitura do arquivo não; por isso o limite folgado. */
+    for (let t = 0; t < 100 && WB.data.solicitacoes.length === s0; t++) await espera(100);
+    await espera(120);
+    const pedido = WB.data.solicitacoes[0];
+    log(WB.data.solicitacoes.length === s0 + 1, 'briefing enviado entra na lista de pedidos');
+    /* Sem o pedido novo, o resto deste bloco não tem o que verificar: sair
+       com aviso é melhor do que estourar e derrubar o roteiro inteiro. */
+    if (!pedido || !pedido.campos) { log(false, 'sem o pedido novo, o resto do briefing não pode ser verificado'); WB.fecharPopup(); await espera(140); return; }
+    const rotulos = pedido.campos.map((c) => c[0]);
+    const faltando = ['Descrição curta', 'Como vai acontecer', 'Perfil do público',
+      'Lista de participantes', 'Cardápio desejado', 'Restrições alimentares',
+      'Mensagem-chave', 'Divulgação', 'Outras informações'].filter((r) => rotulos.indexOf(r) < 0);
+    log(faltando.length === 0, 'o pedido guarda os sete blocos do briefing', faltando.join(', ') || 'nenhum campo perdido');
+    log(/SOL-\d{4}/.test(pedido && pedido.id || ''), 'o pedido tem chave interna (não aparece na tela)', pedido && pedido.id);
+    log(pedido && pedido.responsavel === 'u9', 'o responsável pelo evento é quem recebe para aprovar', pedido && pedido.responsavel);
+    log(pedido && pedido.valores.lista && pedido.valores.lista.nome === 'convidados.csv' && pedido.valores.lista.guardado, 'a lista de participantes foi guardada como arquivo');
+    log(pedido && pedido.valores.orcamento === 15000, 'o orçamento é gravado como número', pedido && pedido.valores.orcamento);
+    log(!/SOL-\d/.test(q('#modal-root').textContent) && !/ainda não aconteceu/.test(q('#modal-root').textContent), 'a confirmação não tem número nem "o que ainda não aconteceu"');
+    if (pedido) WB.pedidos.apagar(pedido.id);
+    WB.fecharPopup();
+    await espera(140);
+
+    // A03 — ler comunicado abre o texto, não o formulário de publicar
+    await ir('#/home');
+    const botaoNews = q('#conteudo [data-news]');
+    log(!!botaoNews, 'a home oferece "Ler comunicado"');
+    if (botaoNews) {
+      botaoNews.click();
+      await espera(200);
+      const corpo = q('#modal-root');
+      log(corpo.children.length > 0 && !corpo.querySelector('form'), 'ler comunicado abre leitura, não o formulário de publicação');
+      // A home mostra só os avisos do público da pessoa: vale qualquer um deles.
+      const aberto = WB.data.news.filter((n) => corpo.textContent.indexOf(n.corpo) >= 0);
+      log(aberto.length === 1, 'o comunicado aberto mostra o próprio texto', aberto.length ? aberto[0].titulo : 'nenhum aviso reconhecido');
+      WB.fecharPopup();
+      await espera(120);
+    }
+  }
+
+
+  /* ===================================================== comercial: funil e News
+     Cobre o que só existe com DOM: o popup de conversão que a última coluna
+     abre, o cancelamento que NÃO converte, e a galeria do News aberta pelo
+     atalho do Início. A lógica pura está em tests/comercial.test.cjs. */
+  async function comercial() {
+    titulo('Comercial — funil, conversão e galeria do News');
+    const C = WB.comercial;
+
+    await ir('#/crm');
+    log(document.querySelectorAll('#conteudo [data-crm-drop]').length === C.funil().length,
+      'o quadro tem uma coluna por etapa do funil', C.funil().join(' · '));
+    const arrastaveis = document.querySelectorAll('#conteudo [data-crm-drag]').length;
+    log(arrastaveis > 0, 'os leads do grupo têm alça de arrastar', arrastaveis + ' cartões');
+    log(document.querySelectorAll('#conteudo [data-crm-etapa]').length === arrastaveis,
+      'e cada um também tem a caixa de etapa, para teclado e celular');
+    const deFora = document.querySelectorAll('#conteudo .crmcard--fora').length;
+    log(deFora === 0 || document.querySelectorAll('#conteudo .crmcard--fora[data-crm-drag]').length === 0,
+      'registro da WeInvest aparece, mas sem alça de arrastar', deFora + ' cartões de lá');
+
+    // Mover pela caixa de etapa grava de verdade.
+    const sel = q('#conteudo [data-crm-etapa]');
+    const id = sel.dataset.crmEtapa;
+    const antes = C.registro(id).etapa;
+    const destino = C.funil().find((e) => e !== antes && e !== C.etapaFinal());
+    sel.value = destino;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await espera(180);
+    log(C.registro(id).etapa === destino, 'mover pela caixa de etapa grava', antes + ' → ' + C.registro(id).etapa);
+
+    // Chegar na última coluna abre a conversão — e cancelar não converte.
+    const sel2 = q('#conteudo [data-crm-etapa="' + id + '"]');
+    sel2.value = C.etapaFinal();
+    sel2.dispatchEvent(new Event('change', { bubbles: true }));
+    await espera(200);
+    const pop = q('#modal-root .pop');
+    log(!!pop && /Converter em cliente/.test(pop.textContent), 'a última coluna abre o formulário de conversão');
+    log(!!q('#modal-root [name="situacao"]') && !!q('#modal-root [name="valor"]'),
+      'e pede o que um lead não tem: valor e situação');
+    log(!!q('#modal-root [name="contratoId"]'), 'oferecendo os contratos do Administrativo');
+    q('#modal-root [data-fechar]').click();
+    await espera(180);
+    log(C.registro(id).tipo === 'lead', 'cancelar NÃO converte o lead');
+    log(C.registro(id).etapa === destino, 'e o lead continua na coluna de onde saiu', C.registro(id).etapa);
+
+    // Converter de verdade tira da lista de Leads e põe na de Clientes.
+    const nome = C.registro(id).nome;
+    C.converter(id, { situacao: 'Ativo', valor: 1000 });
+    await ir('#/leads');
+    log(!q('#conteudo').innerHTML.includes(WB.esc(nome)), 'convertido sai da lista de Leads', nome);
+    await ir('#/clientes');
+    log(q('#conteudo').innerHTML.includes(WB.esc(nome)), 'e entra na de Clientes');
+
+    // Galeria do News: atalho do Início, sem rota e sem item na lateral.
+    await ir('#/home');
+    const verTodas = q('#conteudo [data-action="news-galeria"]');
+    log(!!verTodas, 'o painel News tem o atalho "Ver todas"');
+    log(!q('.sb [href="#/news"]') && !q('.sb [href="#/galeria-news"]'), 'e a galeria não virou item da lateral');
+    if (verTodas) {
+      verTodas.click();
+      await espera(220);
+      const cards = document.querySelectorAll('#modal-root [data-news-item]').length;
+      const naTela = document.querySelectorAll('#conteudo .wh-news-card').length;
+      /* Comparar com a tela não prova nada enquanto a base couber inteira nela.
+         O que a galeria promete é não cortar: ela mostra tudo que o perfil pode
+         ver, e o corte de três ou quatro é só do painel do Início. */
+      const eu = WB.eu();
+      const visiveis = (WB.data.news || []).filter((n) =>
+        n.publico === 'Todos' || n.publico === eu.setor || n.publico === eu.funcao).length;
+      log(cards > 0, 'o atalho abre a galeria', cards + ' comunicados');
+      log(cards === visiveis, 'a galeria não corta: traz tudo que o perfil pode ver',
+        naTela + ' no painel, ' + cards + ' na galeria, ' + visiveis + ' visíveis ao perfil');
+      WB.fecharPopup();
+      await espera(120);
+    }
+  }
+
+  (async function () {
+    await espera(320);
+    try {
+      titulo('Regressões de foco e rotas');
+      const popupLeitura = WB.abrirPopup({ titulo: 'Leitura', corpo: '<p>Comunicado sem formulário.</p>' });
+      log(document.activeElement === popupLeitura.querySelector('[data-fechar]'), 'popup sem formulário foca Fechar');
+      document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      log(!document.querySelector('#modal-root .ov'), 'Escape fecha popup de leitura');
+      await ir('#/busca/%');
+      log(!!q('#conteudo h1'), 'rota com escape inválido renderiza conteúdo');
+      await modulosDoCodex();
+      await inicioReformulado();
+      await tabelas();
+      await subniveis();
+      await demandasReformulada();
+      await pedidos();
+      await fase2();
+      await comercial();
+      await varredura();
+      await fichaDaDemanda();
+      await medidas();
+    } catch (e) {
+      log(false, 'exceção interrompeu o roteiro', e && e.message);
+    }
+    saida.push('\nerros de execução: ' + (window.__erros.length ? window.__erros.join(' | ') : 'nenhum'));
+    const falhas = saida.filter((l) => l.indexOf('FALHA') === 0).length;
+    const passes = saida.filter((l) => l.indexOf('PASS') === 0).length;
+    document.getElementById('resultado').textContent = saida.join('\n');
+    document.getElementById('placar').textContent = falhas
+      ? falhas + ' falha' + (falhas > 1 ? 's' : '') + ' em ' + (passes + falhas) + ' verificações'
+      : passes + ' verificações, nenhuma falha';
+    document.title = 'WeBrain — ' + falhas + ' falhas';
+  })();
+})();
+</script>
+</body>
+</html>

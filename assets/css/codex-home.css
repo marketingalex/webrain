@@ -1,0 +1,199 @@
+/* Escopo isolado: não altera app.css ou componentes da Claude.
+   Reescrito em 21/09/2026 junto com o novo Início (ver codex-home.js). */
+.we-home {
+  --wh-ink:#263b49; --wh-muted:#626e76; --wh-brand:#374b58; --wh-accent:#ff5f00;
+  --wh-bg:#f4f6f7; --wh-surface:#fff; --wh-line:#dfe5e8; --wh-soft:#eef2f4;
+  --wh-danger:#ac3528; --wh-radius:14px;
+  color:var(--wh-ink); font-family:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14px; line-height:1.55; max-width:1440px; margin:auto; padding:28px 40px 48px;
+  background:var(--wh-bg); color-scheme:light;
+}
+.we-home *, .we-home *::before, .we-home *::after { box-sizing:border-box; }
+.we-home h1,.we-home h2,.we-home h3,.we-home p { margin:0; }
+.we-home h1,.we-home h2,.we-home h3 { font-family:inherit; color:var(--wh-ink); }
+.we-home h1 { font-size:36px; font-weight:600; line-height:1.2; letter-spacing:-1.4px; }
+.we-home h2 { font-size:20px; font-weight:600; letter-spacing:-.5px; line-height:1.35; }
+.we-home h3 { font-size:14px; font-weight:600; line-height:1.55; }
+.we-home button,.we-home input { font:inherit; }
+.we-home button { cursor:pointer; }
+.we-home button:disabled { cursor:not-allowed; opacity:.65; }
+.we-home a { color:inherit; text-decoration:none; }
+.we-home :focus-visible { outline:3px solid var(--wh-brand); outline-offset:4px; }
+.we-home .wh-ic { flex-shrink:0; }
+.we-home .wh-sr { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.we-home .wh-muted { color:var(--wh-muted); font-size:11px; }
+
+.we-home .wh-demo { display:flex; align-items:center; flex-wrap:wrap; gap:8px; padding:9px 14px; background:var(--wh-soft); border:1px solid var(--wh-line); border-radius:8px; font-size:12px; font-weight:600; }
+.we-home .wh-demo>span:last-child { margin-left:auto; font-weight:400; color:var(--wh-muted); }
+.we-home .wh-demo-dot { width:6px; height:6px; border-radius:50%; background:var(--wh-accent); }
+
+/* ------------------------------------------------------------ saudação
+   Só o nome e a data: o resto do que estava aqui virava leitura obrigatória
+   antes de chegar ao que a pessoa veio fazer. */
+.we-home .wh-heading { display:flex; justify-content:space-between; align-items:center; gap:24px; margin:28px 0 16px; }
+.we-home .wh-date { text-align:right; flex-shrink:0; }
+.we-home .wh-date span { display:block; color:var(--wh-muted); font-size:12px; }
+.we-home .wh-date strong { display:block; font-size:17px; font-weight:500; }
+
+/* Função e sprint em destaque: é o que diz de onde a pessoa está falando. */
+.we-home .wh-context { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 14px; background:var(--wh-surface); border:1px solid var(--wh-line); border-left:4px solid var(--wh-brand); border-radius:10px; margin-bottom:22px; }
+.we-home .wh-context-item { display:inline-flex; align-items:center; padding:7px 13px; border-radius:20px; background:var(--wh-soft); font-size:13px; font-weight:600; }
+.we-home .wh-context-item--sprint { background:var(--wh-accent); color:#fff; }
+.we-home .wh-context-item--quiet { margin-left:auto; background:transparent; color:var(--wh-muted); font-weight:500; font-size:12px; padding-right:2px; }
+
+.we-home .wh-panel { background:var(--wh-surface); border:1px solid var(--wh-line); border-radius:var(--wh-radius); min-width:0; overflow:hidden; }
+.we-home .wh-panel-head { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:20px 22px 14px; }
+.we-home .wh-text-button { display:inline-flex; align-items:center; gap:4px; padding:10px 0; min-height:40px; border:0; background:transparent; color:var(--wh-ink); font-size:11px; font-weight:600; }
+.we-home .wh-text-button:hover { color:var(--wh-accent); }
+.we-home .wh-tag { display:inline-flex; align-items:center; background:var(--wh-soft); border-radius:5px; color:var(--wh-muted); padding:3px 7px; font-size:10px; font-weight:500; }
+.we-home .wh-tag--new { background:var(--wh-accent); color:#fff; font-weight:700; letter-spacing:.4px; }
+.we-home .wh-tag--late { color:var(--wh-danger); font-weight:600; }
+.we-home .wh-empty { padding:24px 22px; color:var(--wh-muted); }
+.we-home .wh-empty strong { color:var(--wh-ink); font-size:14px; font-weight:600; }
+.we-home .wh-empty p { margin-top:8px; font-size:12px; max-width:420px; }
+.we-home .wh-segment { display:inline-flex; background:var(--wh-soft); border-radius:8px; padding:4px; gap:2px; }
+.we-home .wh-segment button { border:0; border-radius:5px; background:transparent; color:var(--wh-muted); font-size:12px; padding:9px 12px; min-height:36px; }
+.we-home .wh-segment button[aria-pressed="true"] { background:var(--wh-surface); color:var(--wh-ink); box-shadow:0 1px 4px #182d3912; font-weight:600; }
+
+/* ------------------------------------------- políticas e pedidos (topo) */
+.we-home .wh-top { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr); gap:20px; align-items:start; }
+.we-home .wh-policy-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px; padding:0 22px 22px; }
+.we-home .wh-policy { display:flex; flex-direction:column; gap:6px; align-items:flex-start; padding:16px 14px; border:1px solid var(--wh-line); border-radius:10px; background:var(--wh-bg); min-height:132px; }
+.we-home .wh-policy:hover { border-color:var(--wh-brand); background:var(--wh-surface); box-shadow:0 6px 18px #182d390f; }
+.we-home .wh-policy-ic { display:grid; place-items:center; width:38px; height:38px; border-radius:10px; background:var(--wh-surface); border:1px solid var(--wh-line); color:var(--wh-brand); margin-bottom:4px; }
+.we-home .wh-policy strong { font-size:12.5px; font-weight:600; line-height:1.4; overflow-wrap:anywhere; }
+.we-home .wh-policy-meta { font-size:10.5px; color:var(--wh-muted); }
+
+.we-home .wh-requests { border-left:4px solid var(--wh-accent); }
+.we-home .wh-actions { display:grid; gap:10px; padding:20px 20px 22px; }
+.we-home .wh-action { display:grid; grid-template-columns:44px minmax(0,1fr); grid-template-rows:auto auto; column-gap:12px; align-items:center; text-align:left; padding:14px; border:1px solid var(--wh-line); border-radius:10px; background:var(--wh-bg); color:var(--wh-ink); }
+.we-home .wh-action:hover:not(:disabled) { border-color:var(--wh-brand); background:var(--wh-surface); box-shadow:0 6px 18px #182d390f; }
+.we-home .wh-action-ic { grid-row:1/3; display:grid; place-items:center; width:44px; height:44px; border-radius:11px; background:var(--wh-brand); color:#fff; }
+.we-home .wh-action strong { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; font-weight:600; }
+.we-home .wh-action>span:not(.wh-action-ic) { font-size:10.5px; color:var(--wh-muted); margin-top:3px; }
+.we-home .wh-integration-note { padding:0 20px 18px; font-size:11px; color:var(--wh-muted); }
+
+/* ---------------------------------------------------------------- news */
+.we-home .wh-news { margin-top:20px; }
+.we-home .wh-news-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; padding:0 22px 22px; }
+.we-home .wh-news-card { display:flex; flex-direction:column; border:1px solid var(--wh-line); border-radius:12px; overflow:hidden; background:var(--wh-bg); }
+.we-home .wh-news-card:hover { border-color:var(--wh-brand); }
+.we-home .wh-news-cover { display:block; position:relative; aspect-ratio:16/9; background:var(--wh-soft); }
+.we-home .wh-news-cover img { width:100%; height:100%; object-fit:cover; display:block; }
+.we-home .wh-news-cover--gerada { display:grid; place-items:center; color:#fff; background:linear-gradient(135deg,var(--c1),var(--c2)); }
+.we-home .wh-news-body { padding:14px; }
+.we-home .wh-news-meta { display:flex; justify-content:space-between; align-items:center; gap:8px; color:var(--wh-muted); font-size:10px; margin-bottom:10px; }
+.we-home .wh-news-tags { display:flex; gap:6px; flex-wrap:wrap; }
+.we-home .wh-news-card p { color:var(--wh-muted); font-size:12px; margin-top:8px; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; }
+
+/* -------------------------------------------------------------- agenda
+   Grade de horas: régua fixa à esquerda, um dia por coluna. A altura é a
+   mesma para régua e colunas, senão o bloco do compromisso descola da hora. */
+.we-home .wh-agenda { margin-top:20px; }
+.we-home .wh-cal { padding:0 22px 22px; }
+.we-home .wh-cal-head { display:grid; grid-template-columns:56px repeat(var(--colunas),minmax(0,1fr)); align-items:end; gap:0; }
+.we-home .wh-cal-corner { display:grid; place-items:center; color:var(--wh-muted); padding-bottom:8px; }
+.we-home .wh-cal-day { text-align:center; padding:4px 2px 8px; border-bottom:1px solid var(--wh-line); }
+.we-home .wh-cal-day small { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--wh-muted); }
+.we-home .wh-cal-day strong { display:inline-grid; place-items:center; width:28px; height:28px; border-radius:50%; font-size:14px; font-weight:600; margin-top:3px; }
+.we-home .wh-cal-day--today strong { background:var(--wh-accent); color:#fff; }
+.we-home .wh-cal-body { display:grid; grid-template-columns:56px minmax(0,1fr); height:520px; }
+.we-home .wh-cal-rail { display:grid; grid-auto-rows:1fr; }
+.we-home .wh-cal-rail span { font-size:10px; color:var(--wh-muted); transform:translateY(-6px); padding-right:8px; text-align:right; font-variant-numeric:tabular-nums; }
+.we-home .wh-cal-grid { display:grid; grid-template-columns:repeat(var(--colunas),minmax(0,1fr)); }
+.we-home .wh-cal-col { position:relative; display:grid; grid-auto-rows:1fr; border-left:1px solid var(--wh-line); }
+.we-home .wh-cal-col:last-child { border-right:1px solid var(--wh-line); }
+.we-home .wh-cal-line { border-top:1px solid var(--wh-line); }
+.we-home .wh-cal-ev { position:absolute; overflow:hidden; border-radius:7px; padding:5px 7px; background:var(--wh-brand); color:#fff; border-left:3px solid #ffffff59; }
+.we-home .wh-cal-ev strong { display:block; font-size:11px; font-weight:600; line-height:1.3; }
+.we-home .wh-cal-ev span { display:block; font-size:10px; opacity:.85; margin-top:2px; }
+.we-home .wh-cal-ev--evento { background:var(--wh-accent); }
+.we-home .wh-cal-loose { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding-top:12px; }
+
+/* ------------------------------------------ segunda remessa, 22/09/2026
+   Ordem nova (News → pedidos → agenda → políticas), news menores, pedidos em
+   cor cheia, agendas que ligam e desligam e botões de gestão. Ver o registro
+   em ALINHAMENTO_CLAUDE_CODEX.md. */
+.we-home .wh-news, .we-home .wh-requests, .we-home .wh-agenda, .we-home .wh-policies { margin-top:20px; }
+.we-home .wh-news-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; padding:0 22px 20px; }
+.we-home .wh-news-cover { aspect-ratio:16/7; }
+.we-home .wh-news-cover--gerada .wh-ic { width:24px; height:24px; }
+.we-home .wh-news-body { padding:12px; display:flex; flex-direction:column; flex:1; }
+.we-home .wh-news-meta { margin-bottom:6px; }
+.we-home .wh-news-card h3 { font-size:13px; line-height:1.4; }
+.we-home .wh-news-card p { font-size:11.5px; margin-top:5px; -webkit-line-clamp:2; }
+.we-home .wh-news-para { display:block; margin-top:6px; font-size:10px; color:var(--wh-muted); }
+.we-home .wh-news-foot { display:flex; align-items:center; gap:6px; margin-top:auto; padding-top:4px; }
+.we-home .wh-news-foot .wh-text-button { margin-right:auto; min-height:34px; padding:6px 0; }
+.we-home .wh-mini { border:1px solid var(--wh-line); background:var(--wh-surface); color:var(--wh-muted); border-radius:6px; font-size:10.5px; font-weight:600; padding:5px 9px; min-height:30px; }
+.we-home .wh-mini:hover:not(:disabled) { color:var(--wh-ink); border-color:var(--wh-brand); }
+.we-home .wh-mini--danger:hover:not(:disabled) { color:var(--wh-danger); border-color:var(--wh-danger); }
+.we-home .wh-head-button { border:0; border-radius:8px; background:var(--wh-brand); color:#fff; font-size:12px; font-weight:600; padding:9px 14px; min-height:38px; }
+.we-home .wh-head-button:hover:not(:disabled) { background:var(--wh-ink); }
+.we-home .wh-head-button--quiet { background:var(--wh-soft); color:var(--wh-ink); }
+.we-home .wh-head-button--quiet:hover:not(:disabled) { background:var(--wh-line); }
+.we-home .wh-head-actions { display:inline-flex; align-items:center; gap:14px; }
+
+/* Pedidos em faixa própria, com os três pedidos em laranja cheio — é o que a
+   pessoa procura no Início. Lead e cliente ficam no mesmo bloco, discretos. */
+.we-home .wh-requests { background:linear-gradient(135deg,#fff4ec,#ffe6d5); border-color:#ffc9a6; }
+.we-home .wh-requests .wh-actions { grid-template-columns:repeat(5,minmax(0,1fr)); padding:18px; gap:12px; }
+.we-home .wh-action--pedido { background:var(--wh-accent); border-color:var(--wh-accent); color:#fff; box-shadow:0 6px 16px #ff5f0033; }
+.we-home .wh-action--pedido:hover:not(:disabled) { background:#e85600; border-color:#e85600; box-shadow:0 8px 22px #ff5f004d; }
+.we-home .wh-action--pedido .wh-action-ic { background:#ffffff2e; color:#fff; }
+.we-home .wh-action--pedido>span:not(.wh-action-ic) { color:#fff; opacity:.9; }
+.we-home .wh-action:not(.wh-action--pedido) { background:var(--wh-surface); }
+
+/* Agendas compartilhadas: cada chip é um interruptor, com a cor da agenda. */
+.we-home .wh-agendas { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:0 22px 14px; }
+.we-home .wh-agenda-chip { display:inline-flex; align-items:center; gap:7px; border:1px solid var(--wh-line); background:var(--wh-surface); color:var(--wh-muted); border-radius:20px; padding:6px 12px; font-size:12px; font-weight:500; min-height:34px; }
+.we-home .wh-agenda-chip i { width:10px; height:10px; border-radius:3px; border:2px solid var(--ag,var(--wh-brand)); background:transparent; }
+.we-home .wh-agenda-chip[aria-pressed="true"] { color:var(--wh-ink); border-color:var(--ag,var(--wh-brand)); font-weight:600; }
+.we-home .wh-agenda-chip[aria-pressed="true"] i { background:var(--ag,var(--wh-brand)); }
+.we-home .wh-agenda-chip[aria-pressed="false"] { text-decoration:line-through; }
+.we-home .wh-cal-ev--cor { background:var(--ag); }
+
+:root[data-theme="dark"] .we-home .wh-requests { background:linear-gradient(135deg,#3a2517,#2d1e14); border-color:#6b3a1c; }
+@media(max-width:1100px) {
+  .we-home .wh-requests .wh-actions { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+  .we-home .wh-requests .wh-actions { grid-template-columns:1fr; padding:16px; }
+  .we-home .wh-agendas { padding:0 16px 12px; }
+}
+
+:root[data-theme="dark"] .we-home { --wh-ink:#edf2f5; --wh-muted:#b4c0c8; --wh-brand:#3d5666; --wh-bg:#18232b; --wh-surface:#22313c; --wh-line:#41515c; --wh-soft:#2e414e; --wh-danger:#ffae9f; color-scheme:dark; }
+:root[data-theme="dark"] .we-home .wh-policy-ic { color:#b7cad6; }
+:root[data-theme="dark"] .we-home .wh-context { border-left-color:#b7cad6; }
+
+@media(max-width:1100px) {
+  .we-home { padding:24px; }
+  .we-home .wh-top { grid-template-columns:1fr; }
+  .we-home .wh-actions { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .we-home .wh-news-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+  .we-home .wh-heading { align-items:flex-start; }
+  .we-home .wh-heading h1 { font-size:29px; }
+  .we-home .wh-date { display:none; }
+  .we-home .wh-demo>span:last-child { margin-left:14px; }
+  .we-home .wh-actions { grid-template-columns:1fr; }
+  .we-home .wh-news-grid { grid-template-columns:1fr; }
+  .we-home .wh-context-item--quiet { display:none; }
+  /* Semana no celular: a grade rola na horizontal em vez de espremer sete
+     colunas até o compromisso ficar ilegível. */
+  .we-home .wh-cal--week { overflow-x:auto; }
+  .we-home .wh-cal--week .wh-cal-head,
+  .we-home .wh-cal--week .wh-cal-body { min-width:640px; }
+}
+@media(max-width:480px) {
+  .we-home { padding:16px 12px 32px; }
+  .we-home .wh-panel-head { padding:18px 16px 12px; flex-wrap:wrap; }
+  .we-home .wh-panel-head h2 { font-size:18px; }
+  .we-home .wh-policy-grid { grid-template-columns:1fr; padding:0 16px 18px; }
+  .we-home .wh-actions { padding:16px; }
+  .we-home .wh-news-grid { padding:0 16px 18px; }
+  .we-home .wh-cal { padding:0 12px 18px; }
+  .we-home .wh-cal-body { height:440px; }
+}
+@media(prefers-reduced-motion:reduce) { .we-home *, .we-home *::before, .we-home *::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; } }

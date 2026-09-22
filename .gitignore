@@ -1,0 +1,20 @@
+# Configuração local e credenciais
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.DS_Store
+Thumbs.db
+node_modules/
+coverage/
+*.log
+
+# Estudos visuais e capturas locais
+/_*.html
+/_tema-*.css
+
+# Configuração pessoal de ferramentas
+.agents/
+.codex/
+.vscode/

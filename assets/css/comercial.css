@@ -1,0 +1,133 @@
+/* ==========================================================================
+   WeBrain — Comercial: o quadro do funil e a galeria do News.
+   --------------------------------------------------------------------------
+   Usa os tokens de `app.css`. Nenhuma cor literal aqui: o quadro precisa
+   funcionar nos dois temas, e o cartão fica sobre `--surface` em ambos.
+
+   O quadro rola na horizontal de propósito. Cinco colunas não cabem em tela
+   estreita, e espremê-las deixaria o cartão ilegível — melhor rolar do que
+   esconder informação.
+   ========================================================================== */
+
+.crmboard {
+  display: grid;
+  grid-auto-flow: column;
+  /* 210px é o suficiente para o cartão continuar legível, e faz as cinco
+     colunas caberem num note de 1440px sem rolar. Abaixo disso, o quadro rola
+     na horizontal em vez de espremer o conteúdo. */
+  grid-auto-columns: minmax(210px, 1fr);
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  align-items: start;
+}
+.crmboard::-webkit-scrollbar { height: 10px; }
+.crmboard::-webkit-scrollbar-thumb { background: var(--line-2); border: 3px solid var(--app-bg); border-radius: 10px; }
+
+.crmcol {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 12px;
+  min-height: 160px;
+  transition: background .12s, border-color .12s;
+}
+/* Coluna sob o cartão arrastado. O aviso é de borda e fundo, não só de cor —
+   quem não distingue matiz continua vendo onde vai soltar. */
+.crmcol--alvo {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  border-style: dashed;
+}
+.crmcol__head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.crmcol__head h2 { font-size: 13px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-2); }
+.crmcol__n {
+  margin-left: auto; font-family: var(--f-mono); font-size: 11px;
+  background: var(--surface-3); color: var(--ink-2);
+  border-radius: 20px; padding: 2px 8px;
+}
+.crmcol__nota { margin: -4px 0 10px; font-size: 11px; color: var(--accent-ink); }
+.crmcol__body { display: flex; flex-direction: column; gap: 10px; }
+.crmcol__vazio { margin: 0; padding: 14px 0; text-align: center; font-size: 13px; color: var(--ink-3); }
+
+/* ------------------------------------------------------------------ cartão */
+.crmcard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 11px 12px;
+  box-shadow: var(--sd);
+  cursor: grab;
+}
+.crmcard:active { cursor: grabbing; }
+.crmcard--arrastando { opacity: .45; }
+/* Lead sem responsável: trilho de acento à esquerda, do mesmo jeito que a
+   lateral marca a página atual. */
+.crmcard--semdono { border-left: 3px solid var(--accent); }
+/* Registro que mora na WeInvest: não se arrasta daqui. */
+.crmcard--fora { cursor: default; border-style: dashed; background: var(--surface-2); }
+
+.crmcard__topo { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.crmcard__prod {
+  font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+.crmcard__dias {
+  margin-left: auto; font-family: var(--f-mono); font-size: 11px; color: var(--ink-3);
+}
+.crmcard__nome { display: block; font-size: 14px; line-height: 1.3; color: var(--ink); }
+.crmcard__meta {
+  display: flex; flex-wrap: wrap; gap: 4px 10px;
+  margin-top: 5px; font-size: 12px; color: var(--ink-2);
+}
+.crmcard__trouxe { margin-top: 6px; font-size: 11px; color: var(--ink-3); }
+
+.crmcard__dono {
+  display: flex; align-items: center; gap: 7px;
+  margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--ink-2);
+}
+.crmcard__resp { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.crmcard__alerta { color: var(--accent-ink); font-weight: 600; }
+.crmcard__dono .btn { margin-left: auto; }
+.crmcard__link { display: block; margin-top: 9px; font-size: 12px; color: var(--accent-ink); }
+
+.crmcard__mover { display: block; margin-top: 9px; }
+.crmcard__mover .inp { min-height: var(--ctrl-h-sm); padding: 5px 8px; font-size: 13px; }
+
+/* ================================================== galeria do News (popup)
+   Abre pelo Início. A rolagem é da lista, não da página: o cabeçalho do popup
+   fica no lugar enquanto se percorre o histórico. */
+.newsgal { display: grid; gap: 12px; }
+.newsgal__item {
+  display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: start;
+  width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 12px; cursor: pointer;
+}
+.newsgal__item:hover { border-color: var(--ink-3); background: var(--surface-2); }
+.newsgal__capa {
+  display: flex; align-items: center; justify-content: center;
+  height: 72px; border-radius: var(--r-sm); overflow: hidden; color: #fff;
+  background: linear-gradient(135deg, var(--c1, var(--brand-slate)), var(--c2, var(--brand-slate)));
+}
+.newsgal__capa img { width: 100%; height: 100%; object-fit: cover; }
+.newsgal__meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin-bottom: 5px; font-size: 12px; color: var(--ink-3);
+}
+.newsgal__item h3 { font-size: 15px; margin-bottom: 4px; }
+.newsgal__item p {
+  margin: 0; font-size: 13px; color: var(--ink-2);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .newsgal__item { grid-template-columns: 1fr; }
+  .newsgal__capa { height: 120px; }
+}
+
+/* Aviso de lead sem responsável. Herda tudo de `.rule` e só troca o trilho da
+   esquerda para o acento: é chamado de atenção, não estado de erro — por isso
+   não usa a paleta de `--late`. */
+.rule--warn { border-left-color: var(--accent); background: var(--accent-soft); }

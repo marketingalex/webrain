@@ -1,0 +1,181 @@
+/* WeBrain — Administrativo: barra de filtros, seletor de colunas, situação
+   editável na célula e ficha. Nada aqui redefine token de marca nem componente
+   existente: as cores continuam vindo das variáveis de app.css, então o tema
+   claro/escuro segue valendo. */
+
+/* ------------------------------------------------------- barra da planilha */
+.admcard { overflow: visible; } /* o painel de colunas sai para fora do cartão */
+
+.admbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+
+.admbar__fs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 12px;
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.admbar__dir {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.admbar__conta {
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.admbar__limpar { align-self: flex-end; }
+
+/* ------------------------------------------------------------- um filtro */
+.admf {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.admf__rot {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.admf__sel {
+  height: var(--ctrl-h-sm);
+  min-width: 140px;
+  max-width: 220px;
+  font-size: 13px;
+  padding: 0 28px 0 10px;
+}
+
+/* -------------------------------------------------------- painel de colunas */
+.admcols { position: relative; }
+.admcols > summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.admcols > summary::-webkit-details-marker { display: none; }
+.admcols[open] > summary { background: var(--surface-3); }
+
+.admcols__pan {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 280px;
+  max-height: 60vh;
+  overflow: auto;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-md);
+  box-shadow: var(--sd-pop);
+}
+.admcols__t {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.admcols__lista { display: flex; flex-direction: column; gap: 2px; }
+.admcols__it {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  cursor: pointer;
+}
+.admcols__it:hover { background: var(--surface-2); }
+.admcols__it > span { flex: 1; min-width: 0; }
+.admcols__it--fixa { color: var(--ink-3); cursor: default; }
+.admcols__x {
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--r-sm);
+  line-height: 0;
+}
+.admcols__x:hover { color: var(--late); background: var(--late-soft); }
+.admcols__nova { width: 100%; margin-top: 10px; justify-content: center; }
+.admcols__nota {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+/* ------------------------------------------------ situação dentro da célula */
+.admsit { display: inline-flex; }
+.admsit__sel {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 3px 24px 3px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none' stroke='%235A6672' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 7px center;
+}
+.admsit__sel:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.admsit--ok .admsit__sel { background-color: var(--ok-soft); color: var(--ok); border-color: var(--ok-soft); }
+.admsit--warn .admsit__sel { background-color: var(--warn-soft); color: var(--warn); border-color: var(--warn-soft); }
+.admsit--late .admsit__sel { background-color: var(--late-soft); color: var(--late); border-color: var(--late-soft); }
+.admsit--info .admsit__sel { background-color: var(--accent-soft); color: var(--accent-ink); border-color: var(--accent-soft); }
+.admsit--idle .admsit__sel { background-color: var(--idle-soft); color: var(--ink-2); border-color: var(--idle-soft); }
+
+/* ---------------------------------------------------- link e ações da linha */
+.admlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.admacoes { display: inline-flex; gap: 6px; white-space: nowrap; }
+
+/* ----------------------------------------------------------- formulário */
+.admform .fgrid { min-width: 0; }
+.admnovo { margin-top: 6px; }
+.admnovo[hidden] { display: none; }
+.admexcluir { color: var(--late); }
+.admexcluir:hover { background: var(--late-soft); }
+
+.admficha__id { margin: 0 0 12px; color: var(--ink-3); font-size: 13px; }
+
+/* ------------------------------------------------------------ telas estreitas */
+@media (max-width: 760px) {
+  .admbar { padding: 12px; }
+  .admbar__dir { margin-left: 0; width: 100%; justify-content: space-between; }
+  .admf__sel { min-width: 120px; max-width: none; width: 100%; }
+  .admf { flex: 1 1 140px; }
+  .admcols__pan { right: auto; left: 0; width: min(280px, calc(100vw - 48px)); }
+}
