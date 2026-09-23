@@ -177,5 +177,7 @@
   .admbar__dir { margin-left: 0; width: 100%; justify-content: space-between; }
   .admf__sel { min-width: 120px; max-width: none; width: 100%; }
   .admf { flex: 1 1 140px; }
-  .admcols__pan { right: auto; left: 0; width: min(280px, calc(100vw - 48px)); }
+  /* O botão fica na ponta direita da barra: o painel abre para dentro dela.
+     Com left: 0 ele saía 120px para fora da tela a 360px. */
+  .admcols__pan { right: 0; left: auto; width: min(280px, calc(100vw - 48px)); }
 }

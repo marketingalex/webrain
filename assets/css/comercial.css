@@ -51,7 +51,10 @@
 .crmcol__vazio { margin: 0; padding: 14px 0; text-align: center; font-size: 13px; color: var(--ink-3); }
 
 /* ------------------------------------------------------------------ cartão */
+/* position: relative segura o rótulo .sr (absoluto) dentro do cartão; sem ele
+   o rótulo escapava do quadro que rola e empurrava a página 364px a 360px. */
 .crmcard {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-md);

@@ -353,7 +353,7 @@ definir a chave.
 node --test tests/*.test.cjs        # num shell que expanda o padrão
 ```
 
-191 testes, todos aprovados (22/09/2026). Passar só o diretório
+198 testes, todos aprovados (23/09/2026). Passar só o diretório
 (`node --test tests/`) não funciona no Node 21 daqui: ou o shell expande o
 padrão, ou os arquivos vão listados um a um.
 
