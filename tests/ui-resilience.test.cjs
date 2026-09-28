@@ -115,3 +115,52 @@ test('Rotas preservam escapes inválidos sem quebrar acentos ou barras codificad
   }
   assert.deepEqual(Array.from(WB.routeSegments('#/busca/a%C3%A7%C3%A3o%2F2026')), ['busca', 'ação/2026']);
 });
+
+test('Campo numérico preserva zero ao abrir uma edição', () => {
+  const { WB } = setup();
+  assert.match(WB.campo({ nome: 'quantidade', tipo: 'number', valor: 0 }), /value="0"/);
+  assert.match(WB.campo({ nome: 'quantidade', tipo: 'number', valor: null }), /value=""/);
+});
+
+test('Demanda aprovada não recebe aviso de atraso', () => {
+  const { WB } = setup();
+  WB.hoje = new Date(2026, 8, 23);
+  const html = WB.chipPrazo({ status: 'aprovada', prazo: '2026-09-01' });
+  assert.match(html, /Aprovada/);
+  assert.doesNotMatch(html, /Atrasada/);
+  assert.match(WB.chipPrazo({ status: 'andamento', prazo: '2026-09-01' }), /Atrasada/);
+});
+
+test('Tab ignora controles desabilitados no final do modal', () => {
+  const { popup, document, close, overlay } = setup();
+  popup();
+  const disabled = { disabled: true, offsetParent: {}, focus() { throw new Error('desabilitado'); } };
+  overlay.querySelectorAll = () => [close, disabled];
+  let prevented = false;
+  overlay.events.keydown({ key: 'Tab', preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(document.activeElement, close);
+});
+
+test('Validação respeita formatos, limites e campos desabilitados', () => {
+  const { WB } = setup();
+  WB.toast = () => {};
+  let focused;
+  const field = (props) => Object.assign({ value: '', attrs: {},
+    setAttribute(k, v) { this.attrs[k] = v; }, removeAttribute(k) { delete this.attrs[k]; },
+    focus() { focused = this; }
+  }, props);
+  const email = field({ value: 'sem-arroba', validity: { valid: false } });
+  const amount = field({ value: '-1', validity: { valid: false } });
+  const disabled = field({ required: true, disabled: true });
+  const required = field({ required: true, value: '   ', validity: { valid: true } });
+  const fields = [disabled, email, amount, required];
+  const form = { querySelectorAll: selector => selector === 'input, select, textarea' ? fields : [] };
+  assert.equal(WB.validar(form), false);
+  assert.equal(focused, email);
+  assert.equal(disabled.attrs['aria-invalid'], undefined);
+  assert.equal(required.attrs['aria-invalid'], 'true');
+  email.validity.valid = true; amount.validity.valid = true; required.value = 'Nome';
+  assert.equal(WB.validar(form), true);
+  assert.equal(email.attrs['aria-invalid'], 'false');
+});

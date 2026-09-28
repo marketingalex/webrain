@@ -13,19 +13,19 @@ function setup(){
   vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../assets/js/login.js'),'utf8'),{document:{getElementById:get}});
   return {get,submit(){get('login-form').events.submit({preventDefault(){}});}};
 }
-test('Login exige perfil, e-mail e senha e foca o primeiro campo inválido',()=>{
+test('Login exige somente e-mail e senha e foca o primeiro campo inválido',()=>{
   const {get,submit}=setup();submit();
-  assert.equal(get('perfil').attrs['aria-invalid'],'true');assert.equal(get('perfil').focused,true);
-  get('perfil').value='gestor';get('email').value='invalido';get('email').validity.typeMismatch=true;get('senha').value='exemplo';submit();
+  assert.equal(get('email').attrs['aria-invalid'],'true');assert.equal(get('email').focused,true);
+  get('email').value='invalido';get('email').validity.typeMismatch=true;get('senha').value='exemplo';submit();
   assert.equal(get('email-error').textContent,'Informe um e-mail válido.');
   assert.equal(get('form-status').hidden,true);
 });
 test('Prévia validada não autentica nem envia dados e limpa a senha',()=>{
   // Sem fetch/storage disponíveis: um uso acidental dessas APIs falharia aqui.
-  const {get,submit}=setup();get('perfil').value='gestor';get('email').value=' teste@exemplo.com ';get('senha').value='segredo';
+  const {get,submit}=setup();get('email').value=' teste@exemplo.com ';get('senha').value='segredo';
   get('toggle-password').events.click();assert.equal(get('senha').type,'text');
   submit();assert.equal(get('email').value,'teste@exemplo.com');assert.equal(get('senha').value,'');assert.equal(get('senha').type,'password');
-  assert.match(get('form-status').textContent,/WeInvest · Gestor/);assert.match(get('form-status').textContent,/nenhum login foi realizado/);
+  assert.match(get('form-status').textContent,/nenhum login foi realizado/);
   assert.equal(get('form-status').hidden,false);assert.equal(get('toggle-password').attrs['aria-pressed'],'false');
 });
 test('Recuperação e solicitação de acesso explicam o estado da prévia',()=>{

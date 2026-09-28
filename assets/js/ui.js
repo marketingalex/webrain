@@ -130,11 +130,16 @@
       const novo = sel.parentElement.querySelector('.admnovo');
       if (!novo || sel.dataset.listaLigada) return;
       sel.dataset.listaLigada = '1';
-      sel.addEventListener('change', () => {
+      const sincronizar = () => {
         const aberto = sel.value === '__novo';
         novo.hidden = !aberto;
         if (aberto && sel.hasAttribute('required')) novo.setAttribute('required', '');
         else novo.removeAttribute('required');
+      };
+      sincronizar();
+      sel.addEventListener('change', () => {
+        sincronizar();
+        const aberto = sel.value === '__novo';
         if (aberto) novo.focus();
       });
     });
@@ -295,7 +300,9 @@
 
   /** Estado de prazo de uma demanda: atrasada / hoje / em dia. */
   WB.chipPrazo = (demanda) => {
-    if (demanda.status === 'concluida') return WB.chip('Concluída', 'ok');
+    if (WB.demandaFechada ? WB.demandaFechada(demanda) : ['aprovada', 'concluida'].includes(demanda.status)) {
+      return WB.chip(demanda.status === 'aprovada' ? 'Aprovada' : 'Concluída', 'ok');
+    }
     const n = WB.dias(demanda.prazo);
     if (n < 0) return WB.chip(`Atrasada · ${Math.abs(n)}d`, 'late');
     if (n === 0) return WB.chip('Vence hoje', 'warn');
@@ -357,8 +364,8 @@
     ov.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { e.stopPropagation(); WB.fecharPopup(); return; }
       if (e.key !== 'Tab') return;
-      const its = Array.from(ov.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'))
-        .filter((el) => el.offsetParent !== null);
+      const its = Array.from(ov.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter((el) => el.offsetParent !== null && !el.disabled && el.tabIndex !== -1);
       if (!its.length) return;
       const primeiro = its[0], ultimo = its[its.length - 1];
       if (e.shiftKey && document.activeElement === primeiro) { e.preventDefault(); ultimo.focus(); }
@@ -525,7 +532,7 @@
     } else if (o.tipo === 'textarea') {
       ctrl = `<textarea class="inp" id="${id}" name="${esc(o.nome || id)}" placeholder="${esc(o.placeholder || '')}"${o.obrigatorio ? ' required' : ''} rows="${o.linhas || 3}">${esc(o.valor || '')}</textarea>`;
     } else {
-      ctrl = `<input class="inp" id="${id}" name="${esc(o.nome || id)}" type="${o.tipo || 'text'}" placeholder="${esc(o.placeholder || '')}" value="${esc(o.valor || '')}"${o.obrigatorio ? ' required' : ''}${o.min != null ? ` min="${o.min}"` : ''}${o.passo ? ` step="${o.passo}"` : ''}>`;
+      ctrl = `<input class="inp" id="${id}" name="${esc(o.nome || id)}" type="${o.tipo || 'text'}" placeholder="${esc(o.placeholder || '')}" value="${esc(o.valor ?? '')}"${o.obrigatorio ? ' required' : ''}${o.min != null ? ` min="${o.min}"` : ''}${o.passo ? ` step="${o.passo}"` : ''}>`;
     }
     return `<div class="fld ${o.span2 ? 'span2' : ''}">
       <label for="${id}">${esc(o.rotulo)}${req}</label>
@@ -558,13 +565,18 @@
     return out;
   };
 
-  /** Valida os campos obrigatórios e marca visualmente o primeiro problema. */
+  /** Valida obrigatoriedade e restrições nativas, inclusive nos campos opcionais. */
   WB.validar = function (form) {
     let ok = true, primeiro = null;
-    form.querySelectorAll('[required]').forEach((el) => {
-      const vazio = !String(el.value || '').trim();
-      el.setAttribute('aria-invalid', vazio ? 'true' : 'false');
-      if (vazio && ok) { ok = false; primeiro = el; }
+    form.querySelectorAll('input, select, textarea').forEach((el) => {
+      if (el.disabled || el.willValidate === false) {
+        el.removeAttribute('aria-invalid');
+        return;
+      }
+      const vazio = el.required && !String(el.value || '').trim();
+      const invalido = vazio || (el.validity && !el.validity.valid);
+      el.setAttribute('aria-invalid', invalido ? 'true' : 'false');
+      if (invalido && ok) { ok = false; primeiro = el; }
     });
     form.querySelectorAll('[data-grupo-obrigatorio]').forEach((g) => {
       const marcado = g.querySelector('input:checked');

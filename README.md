@@ -15,14 +15,12 @@ fotografias em `../Imagens Construção`.
 
 ## Como abrir
 
-A tela de login está em `login.html`: quatro empresas (WeInc, WeInvest, CasaWE e
-Nós Gastronomia) e cinco perfis (Administrador, Gestor, Equipe, Parceiro e
-Corretor). É uma prévia de frontend: valida campos localmente, não envia nem
-armazena credenciais e não autentica. O link de demonstração abre o portal
-existente sem aplicar o perfil selecionado. Autorização de empresa/perfil deverá
-vir da conta no backend. Os nomes das empresas são apresentados em texto,
-sem substituir seus logotipos oficiais.
-
+A tela de login está em `login.html`: formulário central com e-mail e senha,
+recuperação de senha e solicitação de acesso. A seleção de empresa e perfil foi
+removida; essas informações deverão vir da conta quando a autenticação for
+conectada. É uma prévia de frontend: valida campos localmente, não envia nem
+armazena credenciais e não autentica. O link de demonstração abre o portal.
+O roteiro `tests/login-browser.html?test` verifica os controles em desktop e celular.
 Duplo clique em `index.html`. Não precisa de servidor, instalação nem internet —
 sem rede, o navegador usa as fontes do sistema no lugar da Montserrat.
 

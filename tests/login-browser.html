@@ -1,0 +1,22 @@
+﻿<!doctype html><html lang="pt-BR"><meta charset="utf-8"><title>Login — verificação visual</title>
+<style>body{margin:0;background:#e4e9ef;font:14px system-ui}main{display:flex;gap:16px;padding:16px}iframe{border:0;height:820px}p{margin:0 0 8px}#resultado{white-space:pre-wrap}</style>
+<main><section><p>Desktop · 1200 px</p><iframe title="Login desktop" width="1200" src="../login.html"></iframe></section><section><p>Celular · 360 px</p><iframe title="Login celular" width="360" src="../login.html"></iframe></section></main><pre id="resultado"></pre>
+<script>
+if(location.search.includes('test'))addEventListener('load',()=>{
+const results=[];const check=(ok,label)=>results.push((ok?'PASS ':'FALHA ')+label);
+for(const frame of document.querySelectorAll('iframe')){
+const d=frame.contentDocument,w=frame.contentWindow,prefix=frame.width+'px: ';const q=s=>d.querySelector(s);const form=q('form');
+check(d.documentElement.scrollWidth<=frame.clientWidth,prefix+'sem rolagem horizontal');
+check(q('.submit-button').getBoundingClientRect().bottom<frame.clientHeight,prefix+'Entrar visível');
+check(!q('[name="perfil"]')&&!q('[name="empresa"]'),prefix+'acesso sem seleção de empresa/perfil');
+form.requestSubmit();check(d.activeElement===q('#email')&&q('#email-error').textContent,prefix+'obrigatório recebe foco');
+q('#email').value='invalido';q('#senha').value='exemplo';form.requestSubmit();check(q('#email').getAttribute('aria-invalid')==='true',prefix+'e-mail inválido');
+q('#email').value='pessoa@example.com';q('#senha').value='';form.requestSubmit();check(d.activeElement===q('#senha'),prefix+'senha obrigatória');
+q('#senha').value='exemplo';q('#toggle-password').click();check(q('#senha').type==='text',prefix+'mostrar senha');
+form.requestSubmit();check(q('#senha').value===''&&q('#senha').type==='password'&&!q('#form-status').hidden,prefix+'prévia limpa senha e informa resultado');
+q('#email').dispatchEvent(new w.Event('input',{bubbles:true}));check(q('#form-status').hidden,prefix+'edição limpa mensagem');
+for(const id of ['recover','request-access']){q('#'+id).click();check(q('dialog').open,prefix+id+' abre diálogo');q('dialog .submit-button').click();check(!q('dialog').open,prefix+id+' fecha diálogo');}
+}
+document.querySelector('#resultado').textContent=results.join('\n');document.title=results.filter(x=>x.startsWith('FALHA')).length+' falhas em '+results.length+' verificações';
+});
+</script></html>

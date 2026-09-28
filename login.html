@@ -1,8 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f5f6">
   <title>Entrar · WeBrain</title>
   <meta name="description" content="Acesso ao WeBrain, o portal das empresas do Grupo We.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,52 +13,44 @@
 </head>
 <body>
   <main class="login-layout">
-    <section class="brand-panel" aria-labelledby="brand-title">
-      <a class="wordmark" href="index.html" aria-label="WeBrain — abrir demonstração do portal">We<span>Brain</span><i aria-hidden="true"></i></a>
-      <div class="brand-content">
-        <p class="eyebrow">O CÉREBRO DO GRUPO WE</p>
-        <h1 id="brand-title">O seu trabalho.<br>A nossa conexão.</h1>
-        <p class="brand-description">Pessoas, projetos e conhecimento.<br>Um ponto de encontro para fazer acontecer.</p>
-        <div class="ecosystem" aria-label="Empresas do Grupo We">
-          <div class="ecosystem-heading"><span class="connection-dot" aria-hidden="true"></span>Um grupo. Diferentes possibilidades.</div>
-          <ul class="companies">
-            <li><span class="company-name">We<span class="company-light">Inc</span></span><span class="company-caption">Incorporadora</span></li>
-            <li><span class="company-name">We<span class="company-light">Invest</span></span><span class="company-caption">Investimentos</span></li>
-            <li><span class="company-name"><span class="company-light">Casa</span>WE</span><span class="company-caption">CasaWE</span></li>
-            <li><span class="company-name company-name--nos">Nós<span class="company-light"> Gastronomia</span></span><span class="company-caption">Gastronomia</span></li>
-          </ul>
-        </div>
-      </div>
-      <footer class="brand-footer"><span>GRUPO WE</span><span>Conexões que fazem parte.</span></footer>
-    </section>
-
-    <section class="access-panel" aria-labelledby="login-title">
-      <div class="preview-label"><span aria-hidden="true"></span>Prévia da tela de acesso</div>
-      <div class="access-content">
-        <header class="form-header"><p class="eyebrow">BEM-VINDO AO WEBRAIN</p><h2 id="login-title">Entre no seu espaço.</h2><p>Selecione seu acesso e informe seus dados.</p></header>
+    <div class="access-content">
+      <div class="wordmark" aria-label="WeBrain">We<span>Brain</span><i aria-hidden="true"></i></div>
+      <section class="access-panel" aria-labelledby="login-title">
+        <header class="form-header">
+          <h1 id="login-title">Bom ter você aqui.</h1>
+          <p>Entre com seu e-mail e senha.</p>
+        </header>
         <form id="login-form" novalidate>
-          <fieldset class="company-picker">
-            <legend>Empresa</legend>
-            <div class="company-options">
-              <label><input type="radio" name="empresa" value="weinc" checked><span>WeInc<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></span></label>
-              <label><input type="radio" name="empresa" value="weinvest"><span>WeInvest<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></span></label>
-              <label><input type="radio" name="empresa" value="casawe"><span>CasaWE<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></span></label>
-              <label><input type="radio" name="empresa" value="nos"><span>Nós Gastronomia<svg viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8 3 3 7-7"/></svg></span></label>
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="voce@empresa.com.br" required aria-describedby="email-error">
+            <p class="field-error" id="email-error"></p>
+          </div>
+          <div class="field">
+            <div class="field-heading"><label for="senha">Senha</label><button class="text-button" type="button" id="recover">Esqueci minha senha</button></div>
+            <div class="password-control">
+              <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required aria-describedby="senha-error">
+              <button type="button" id="toggle-password" aria-label="Mostrar senha" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="M3 3l18 18"/></svg></button>
             </div>
-          </fieldset>
-          <div class="field"><label for="perfil">Tipo de acesso</label><select id="perfil" name="perfil" required aria-describedby="perfil-help perfil-error"><option value="">Selecione seu perfil</option><option value="administrador">Administrador</option><option value="gestor">Gestor</option><option value="equipe">Equipe</option><option value="parceiro">Parceiro</option><option value="corretor">Corretor</option></select><p class="field-help" id="perfil-help">O acesso deve corresponder ao perfil da sua conta.</p><p class="field-error" id="perfil-error"></p></div>
-          <div class="field"><label for="email">E-mail</label><input id="email" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="seuemail@empresa.com.br" required aria-describedby="email-error"><p class="field-error" id="email-error"></p></div>
-          <div class="field"><div class="field-heading"><label for="senha">Senha</label><button class="text-button" type="button" id="recover">Esqueci minha senha</button></div><div class="password-control"><input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Digite sua senha" required aria-describedby="senha-error"><button type="button" id="toggle-password" aria-label="Mostrar senha" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="M3 3l18 18"/></svg></button></div><p class="field-error" id="senha-error"></p></div>
-          <button class="submit-button" type="submit">Entrar <span aria-hidden="true">→</span></button>
+            <p class="field-error" id="senha-error"></p>
+          </div>
+          <button class="submit-button" type="submit">Entrar</button>
           <p id="form-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></p>
         </form>
-        <p class="request-access">Ainda não tem acesso? <button class="text-button" id="request-access" type="button">Solicitar acesso</button></p>
-        <div class="demo-note"><p>Esta é uma prévia visual. Nenhum dado será enviado.</p><a href="index.html">Explorar demonstração do portal <span aria-hidden="true">↗</span></a></div>
-      </div>
-      <footer class="access-footer"><span>WeBrain · Cérebro We</span><span>Seu ponto de conexão.</span></footer>
-    </section>
+        <p class="request-access">Primeiro acesso? <button class="text-button" id="request-access" type="button">Fale com a gente</button></p>
+      </section>
+      <aside class="demo-note" aria-label="Demonstração">
+        <p>Prévia visual. Nenhum dado é enviado.</p>
+        <a href="index.html">Explorar demonstração</a>
+      </aside>
+    </div>
+    <footer class="access-footer">WeBrain · Grupo We</footer>
   </main>
-  <dialog id="access-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description"><form method="dialog"><button class="dialog-close" aria-label="Fechar" autofocus>×</button></form><p class="eyebrow">ACESSO AO WEBRAIN</p><h2 id="dialog-title"></h2><p id="dialog-description"></p><form method="dialog"><button class="submit-button">Entendi</button></form></dialog>
+  <dialog id="access-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+    <form method="dialog"><button class="dialog-close" aria-label="Fechar">×</button></form>
+    <h2 id="dialog-title"></h2><p id="dialog-description"></p>
+    <form method="dialog"><button class="submit-button" autofocus>Entendi</button></form>
+  </dialog>
   <script src="assets/js/login.js"></script>
 </body>
 </html>

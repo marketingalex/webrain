@@ -1177,6 +1177,34 @@
       log(!document.querySelector('#modal-root .ov'), 'Escape fecha popup de leitura');
       await ir('#/busca/%');
       log(!!q('#conteudo h1'), 'rota com escape inválido renderiza conteúdo');
+      titulo('Regressões de validação e edição');
+      const campos = WB.abrirPopup({ titulo: 'Validação', corpo: `<form id="qa-campos">
+        ${WB.campo({ nome: 'quantidade', tipo: 'number', valor: 0, min: 0, rotulo: 'Quantidade' })}
+        ${WB.campo({ nome: 'email', tipo: 'email', rotulo: 'E-mail' })}
+        ${WB.campoLista({ nome: 'categoria', lista: 'qa-categoria', valor: 'Personalizada', obrigatorio: true, rotulo: 'Categoria' })}
+        <input name="inativo" required disabled>
+        <textarea disabled aria-label="Indisponível"></textarea>
+      </form>` });
+      const formQA = campos.querySelector('form');
+      WB.ligarListas(formQA);
+      log(formQA.elements.quantidade.value === '0', 'edição preserva valor numérico zero');
+      const outroQA = formQA.querySelector('.admnovo');
+      log(outroQA.required && !outroQA.hidden, 'valor personalizado carregado inicia como obrigatório');
+      outroQA.value = '';
+      log(!WB.validar(formQA), 'outro obrigatório não aceita texto vazio');
+      outroQA.value = 'Personalizada';
+      formQA.elements.email.value = 'invalido';
+      log(!WB.validar(formQA) && document.activeElement === formQA.elements.email, 'e-mail inválido bloqueia envio e recebe foco');
+      formQA.elements.email.value = 'pessoa@example.com';
+      formQA.elements.quantidade.value = '-1';
+      log(!WB.validar(formQA), 'número abaixo do mínimo bloqueia envio');
+      formQA.elements.quantidade.value = '0';
+      log(WB.validar(formQA), 'campos válidos passam e desabilitados não bloqueiam');
+      outroQA.focus();
+      outroQA.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      log(document.activeElement === campos.querySelector('[data-fechar]'), 'Tab retorna ao início mesmo com textarea desabilitado no fim');
+      log(!WB.chipPrazo({ status: 'aprovada', prazo: '2020-01-01' }).includes('Atrasada'), 'demanda aprovada não aparece atrasada');
+      WB.fecharPopup();
       await modulosDoCodex();
       await inicioReformulado();
       await tabelas();

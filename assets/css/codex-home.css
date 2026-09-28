@@ -3,7 +3,7 @@
 .we-home {
   --wh-ink:#263b49; --wh-muted:#626e76; --wh-brand:#374b58; --wh-accent:#ff5f00;
   --wh-bg:#f4f6f7; --wh-surface:#fff; --wh-line:#dfe5e8; --wh-soft:#eef2f4;
-  --wh-danger:#ac3528; --wh-radius:14px;
+  --wh-danger:#ac3528; --wh-on-accent:#12171c; --wh-radius:14px;
   color:var(--wh-ink); font-family:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;
   font-size:14px; line-height:1.55; max-width:1440px; margin:auto; padding:28px 40px 48px;
   background:var(--wh-bg); color-scheme:light;
@@ -38,7 +38,7 @@
 /* Função e sprint em destaque: é o que diz de onde a pessoa está falando. */
 .we-home .wh-context { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:12px 14px; background:var(--wh-surface); border:1px solid var(--wh-line); border-left:4px solid var(--wh-brand); border-radius:10px; margin-bottom:22px; }
 .we-home .wh-context-item { display:inline-flex; align-items:center; padding:7px 13px; border-radius:20px; background:var(--wh-soft); font-size:13px; font-weight:600; }
-.we-home .wh-context-item--sprint { background:var(--wh-accent); color:#fff; }
+.we-home .wh-context-item--sprint { background:var(--wh-accent); color:var(--wh-on-accent); }
 .we-home .wh-context-item--quiet { margin-left:auto; background:transparent; color:var(--wh-muted); font-weight:500; font-size:12px; padding-right:2px; }
 
 .we-home .wh-panel { background:var(--wh-surface); border:1px solid var(--wh-line); border-radius:var(--wh-radius); min-width:0; overflow:hidden; }
@@ -46,7 +46,7 @@
 .we-home .wh-text-button { display:inline-flex; align-items:center; gap:4px; padding:10px 0; min-height:40px; border:0; background:transparent; color:var(--wh-ink); font-size:11px; font-weight:600; }
 .we-home .wh-text-button:hover { color:var(--wh-accent); }
 .we-home .wh-tag { display:inline-flex; align-items:center; background:var(--wh-soft); border-radius:5px; color:var(--wh-muted); padding:3px 7px; font-size:10px; font-weight:500; }
-.we-home .wh-tag--new { background:var(--wh-accent); color:#fff; font-weight:700; letter-spacing:.4px; }
+.we-home .wh-tag--new { background:var(--wh-accent); color:var(--wh-on-accent); font-weight:700; letter-spacing:.4px; }
 .we-home .wh-tag--late { color:var(--wh-danger); font-weight:600; }
 .we-home .wh-empty { padding:24px 22px; color:var(--wh-muted); }
 .we-home .wh-empty strong { color:var(--wh-ink); font-size:14px; font-weight:600; }
@@ -96,7 +96,7 @@
 .we-home .wh-cal-day { text-align:center; padding:4px 2px 8px; border-bottom:1px solid var(--wh-line); }
 .we-home .wh-cal-day small { display:block; font-size:10px; text-transform:uppercase; letter-spacing:.8px; color:var(--wh-muted); }
 .we-home .wh-cal-day strong { display:inline-grid; place-items:center; width:28px; height:28px; border-radius:50%; font-size:14px; font-weight:600; margin-top:3px; }
-.we-home .wh-cal-day--today strong { background:var(--wh-accent); color:#fff; }
+.we-home .wh-cal-day--today strong { background:var(--wh-accent); color:var(--wh-on-accent); }
 .we-home .wh-cal-body { display:grid; grid-template-columns:56px minmax(0,1fr); height:520px; }
 .we-home .wh-cal-rail { display:grid; grid-auto-rows:1fr; }
 .we-home .wh-cal-rail span { font-size:10px; color:var(--wh-muted); transform:translateY(-6px); padding-right:8px; text-align:right; font-variant-numeric:tabular-nums; }
@@ -138,10 +138,10 @@
    pessoa procura no Início. Lead e cliente ficam no mesmo bloco, discretos. */
 .we-home .wh-requests { background:linear-gradient(135deg,#fff4ec,#ffe6d5); border-color:#ffc9a6; }
 .we-home .wh-requests .wh-actions { grid-template-columns:repeat(5,minmax(0,1fr)); padding:18px; gap:12px; }
-.we-home .wh-action--pedido { background:var(--wh-accent); border-color:var(--wh-accent); color:#fff; box-shadow:0 6px 16px #ff5f0033; }
+.we-home .wh-action--pedido { background:var(--wh-accent); border-color:var(--wh-accent); color:var(--wh-on-accent); box-shadow:0 6px 16px #ff5f0033; }
 .we-home .wh-action--pedido:hover:not(:disabled) { background:#e85600; border-color:#e85600; box-shadow:0 8px 22px #ff5f004d; }
-.we-home .wh-action--pedido .wh-action-ic { background:#ffffff2e; color:#fff; }
-.we-home .wh-action--pedido>span:not(.wh-action-ic) { color:#fff; opacity:.9; }
+.we-home .wh-action--pedido .wh-action-ic { background:#ffffff2e; color:var(--wh-on-accent); }
+.we-home .wh-action--pedido>span:not(.wh-action-ic) { color:var(--wh-on-accent); }
 .we-home .wh-action:not(.wh-action--pedido) { background:var(--wh-surface); }
 
 /* Agendas compartilhadas: cada chip é um interruptor, com a cor da agenda. */
